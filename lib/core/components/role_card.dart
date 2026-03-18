@@ -25,7 +25,7 @@ class RoleCard extends StatelessWidget {
         padding: EdgeInsets.all(16),
         margin: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? Color(0xfff4f4f6) : Colors.white,
+          color: isSelected ? Color(AppColors.fillColor) : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
