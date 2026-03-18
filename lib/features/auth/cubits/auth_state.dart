@@ -1,9 +1,11 @@
+import 'package:herafy/core/resourses/constants.dart';
+
 abstract class AuthState {}
 
 // selectRole
 class AuthInitial extends AuthState {}
 class SelectRoleState extends AuthState {
-  final int selectedRole; 
+  final UserRole selectedRole; 
 
   SelectRoleState(this.selectedRole);
 }

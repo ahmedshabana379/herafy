@@ -1,18 +1,19 @@
+import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
 
-  int? selectedRole;
+  UserRole? selectedRole;
   // role selection logic
-  void selectRole(int role) {
+  void selectRole(UserRole role) {
     if (selectedRole == role) {
       selectedRole = null; // Deselect if the same role is tapped again
     } else {
       selectedRole = role;
     }
-    emit(SelectRoleState(selectedRole!));
+    emit(SelectRoleState( selectedRole!));
   }
 
   //  buttons logic

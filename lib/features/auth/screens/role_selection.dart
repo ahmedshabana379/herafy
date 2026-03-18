@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
 import 'package:herafy/core/components/role_card.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
-import 'package:herafy/features/auth/screens/login.dart';
 
 class RoleSelectionPage extends StatelessWidget {
   const RoleSelectionPage({super.key});
@@ -36,7 +36,7 @@ class RoleSelectionPage extends StatelessWidget {
       ),
       body: BlocBuilder<AuthCubit, AuthState>(
         builder: (BuildContext context, state) {
-          int? selectedRole = (state is SelectRoleState)
+          UserRole? selectedRole = (state is SelectRoleState)
               ? state.selectedRole
               : null;
           bool isButtonEnabled = selectedRole != null;
@@ -68,14 +68,14 @@ class RoleSelectionPage extends StatelessWidget {
                     role: "عميل",
                     description: "أبحث عن فنيين وخدمات احترافية لمنزلي",
                     icon: Icons.person_search_rounded,
-                    isSelected: selectedRole == 0,
-                    onTap: () => context.read<AuthCubit>().selectRole(0),
+                    isSelected: selectedRole == UserRole.client,
+                    onTap: () => context.read<AuthCubit>().selectRole(UserRole.client),
                   ),
                   const SizedBox(height: 16),
                   RoleCard(
                     role: 'مزود خدمات',
-                    isSelected: selectedRole == 1,
-                    onTap: () => context.read<AuthCubit>().selectRole(1),
+                    isSelected: selectedRole == UserRole.serviceProvider,
+                    onTap: () => context.read<AuthCubit>().selectRole(UserRole.serviceProvider),
                     description: 'أرغب في اقديم خدماتي المهنية للعملاء',
                     icon: Icons.handyman_rounded,
                   ),
