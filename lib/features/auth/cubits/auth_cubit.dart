@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,4 +36,15 @@ class AuthCubit extends Cubit<AuthState> {
       emit(LoginError(e.toString()));
     }
   }
+}
+
+// registration logic
+
+Future<void> register({
+
+  required String name,
+  required String email,
+  required String password,
+}) async {
+  
 }
