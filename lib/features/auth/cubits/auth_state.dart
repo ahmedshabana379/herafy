@@ -29,3 +29,8 @@ class RegisterError extends AuthState {
   final String message;
   RegisterError(this.message);
 }
+
+// Navigation
+
+class NavigateToCustomerRegister extends AuthState{}
+class NavigateToProviderRegister extends AuthState{}

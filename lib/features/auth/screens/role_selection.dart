@@ -6,6 +6,7 @@ import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
+import 'package:herafy/features/auth/screens/customer/customer_register_page.dart';
 
 class RoleSelectionPage extends StatelessWidget {
   const RoleSelectionPage({super.key});
@@ -34,8 +35,9 @@ class RoleSelectionPage extends StatelessWidget {
           ],
         ),
       ),
-      body: BlocBuilder<AuthCubit, AuthState>(
+      body: BlocConsumer<AuthCubit, AuthState>(
         builder: (BuildContext context, state) {
+          final Selected= context.read<AuthCubit>().selectedRole;
           UserRole? selectedRole = (state is SelectRoleState)
               ? state.selectedRole
               : null;
@@ -82,7 +84,7 @@ class RoleSelectionPage extends StatelessWidget {
                   SizedBox(height: 40),
                   AppButton(
                     isButtonEnabled: isButtonEnabled,
-                    onPressed: () => context.read<AuthCubit>().onContinue(),
+                    onPressed: () => Selected ==null? null : context.read<AuthCubit>().onContinue(),
                     text: 'متابعة',
                   ),
                   Row(
@@ -110,7 +112,12 @@ class RoleSelectionPage extends StatelessWidget {
               ),
             ),
           );
-        },
+        }, listener: (BuildContext context, AuthState state) { 
+
+          if(state is NavigateToCustomerRegister){
+            Navigator.pushNamed(context, CustomerRegisterPage.routeName);
+          }else if(state is NavigateToProviderRegister){}
+         },
       ),
     );
   }

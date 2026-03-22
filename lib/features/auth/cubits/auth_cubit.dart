@@ -18,9 +18,15 @@ class AuthCubit extends Cubit<AuthState> {
 
   //  buttons logic
   void onContinue() {
-    if (selectedRole != null) {
+    if (selectedRole == UserRole.client) {
       // logic to navigate to the next screen based on the selected role
+      emit(NavigateToCustomerRegister());
+
+    } else if (selectedRole == UserRole.serviceProvider) {
+      // logic to navigate to the next screen based on the selected role
+      emit(NavigateToProviderRegister());
     } else {
+      
       // display a message to select a role first and make button disabled
     }
   }
