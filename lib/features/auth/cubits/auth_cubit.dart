@@ -6,12 +6,15 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
   // provider data
   String? providerName;
-String? providerEmail;
-String? providerPassword;
-String? providerCategory;
-String? providerLocation; 
-String? idCardImagePath;
-// state for role selection
+  String? providerEmail;
+  String? providerPassword;
+  String? providerCategory;
+  String? providerSubCategory;
+  String? providerCity;
+  String? provideraddress;
+  String? providerRange;
+  String? idCardImagePath;
+  // state for role selection
   UserRole? selectedRole;
   // role selection logic
   void selectRole(UserRole role) {
@@ -20,7 +23,7 @@ String? idCardImagePath;
     } else {
       selectedRole = role;
     }
-    emit(SelectRoleState( selectedRole!));
+    emit(SelectRoleState(selectedRole!));
   }
 
   //  buttons logic
@@ -28,18 +31,16 @@ String? idCardImagePath;
     if (selectedRole == UserRole.client) {
       // logic to navigate to the next screen based on the selected role
       emit(NavigateToCustomerRegister());
-
     } else if (selectedRole == UserRole.serviceProvider) {
       // logic to navigate to the next screen based on the selected role
       emit(NavigateToProviderRegister());
     } else {
-
       // display a message to select a role first and make button disabled
     }
   }
 
   // login logic
-  Future<void> login( {required String email, required String password}) async {
+  Future<void> login({required String email, required String password}) async {
     emit(LoginLoading());
     try {
       await Future.delayed(Duration(seconds: 5));
@@ -50,20 +51,17 @@ String? idCardImagePath;
   }
   // registration logic
 
-Future<void> register({
-
-  required String name,
-  required String email,
-  required String password,
-}) async {
-  emit(RegisterLoading());
-  try {
-    await Future.delayed(Duration(seconds: 5));
-    emit(RegisterSuccess());
-  } catch (e) {
-    emit(RegisterError(e.toString()));
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    emit(RegisterLoading());
+    try {
+      await Future.delayed(Duration(seconds: 5));
+      emit(RegisterSuccess());
+    } catch (e) {
+      emit(RegisterError(e.toString()));
+    }
   }
-  
 }
-}
-
