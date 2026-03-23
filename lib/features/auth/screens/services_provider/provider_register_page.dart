@@ -46,6 +46,22 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        leading: _currentPage > 0
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: Color(AppColors.primaryColor),
+                ),
+                onPressed: previousStep,
+              )
+            : IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(
+                  Icons.arrow_back_ios,
+                  color: Color(AppColors.primaryColor),
+                ),
+              ),
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -87,7 +103,7 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
               ],
             ),
             SizedBox(height: 4),
-      
+
             LinearProgressIndicator(
               value: (_currentPage + 1) / 2,
               backgroundColor: Colors.grey[200],

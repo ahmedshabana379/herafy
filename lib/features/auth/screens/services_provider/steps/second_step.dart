@@ -47,6 +47,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
       child: Form(
         key: _formKey,
         child: Column(
+          
           children: [
             BuildSectionHeader(Icons.work_outline, "المهنة والموقع"),
             TextFieldLabel(title: "اختر المهنة الرئيسية"),
