@@ -4,7 +4,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
-
+  // provider data
+  String? providerName;
+String? providerEmail;
+String? providerPassword;
+String? providerCategory;
+String? providerLocation; 
+String? idCardImagePath;
+// state for role selection
   UserRole? selectedRole;
   // role selection logic
   void selectRole(UserRole role) {
@@ -26,7 +33,7 @@ class AuthCubit extends Cubit<AuthState> {
       // logic to navigate to the next screen based on the selected role
       emit(NavigateToProviderRegister());
     } else {
-      
+
       // display a message to select a role first and make button disabled
     }
   }

@@ -57,11 +57,15 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double horizontalPadding = screenWidth * 0.05;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+
         centerTitle: true,
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -82,7 +86,7 @@ class _LoginPageState extends State<LoginPage> {
       body: Form(
         key: _formKey,
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           child: Center(
             child: SingleChildScrollView(
               child: Column(
@@ -198,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
                       } else if (state is LoginError) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(state.message),
+                            content: Center(child: Text(state.message)),
                             backgroundColor: Colors.redAccent,
                           ),
                         );

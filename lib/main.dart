@@ -4,6 +4,7 @@ import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/screens/customer/customer_register_page.dart';
 import 'package:herafy/features/auth/screens/login.dart';
 import 'package:herafy/features/auth/screens/role_selection.dart';
+import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 
 void main() {
   runApp(BlocProvider(create :(context) => AuthCubit(),
@@ -22,6 +23,7 @@ class HerafyApp extends StatelessWidget {
         RoleSelectionPage.routeName: (context) => const RoleSelectionPage(),
         LoginPage.routeName: (context) => const LoginPage(),
         CustomerRegisterPage.routeName: (context) => const CustomerRegisterPage(),
+        ProviderRegisterPage.routeName: (context) => const ProviderRegisterPage(),
       },
       debugShowCheckedModeBanner: false,
       initialRoute: LoginPage.routeName,

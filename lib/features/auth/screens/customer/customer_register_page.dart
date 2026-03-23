@@ -10,7 +10,7 @@ import 'package:herafy/features/auth/screens/login.dart';
 
 class CustomerRegisterPage extends StatefulWidget {
   const CustomerRegisterPage({super.key});
- static const String routeName="Register";
+  static const String routeName = "Register";
   @override
   State<CustomerRegisterPage> createState() => _CustomerRegisterPageState();
 }
@@ -35,13 +35,13 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    double horizontalPadding = screenWidth * 0.08;
+    double horizontalPadding = screenWidth * 0.05;
     return Scaffold(
       backgroundColor: Colors.white,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -75,13 +75,13 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                 ),
                 child: Icon(
                   Icons.person_search_rounded,
-                  size: 30,
+                  size: 70,
                   color: Color(AppColors.primaryColor),
                 ),
               ),
               const SizedBox(height: 10),
               Text(
-                "إنشاء حساب جديد",
+                "إنضم إلى حرفي",
                 style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -192,7 +192,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                         if (state is RegisterSuccess) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('تم إنشاء الحساب بنجاح!'),
+                              content: Center(child: Text('تم إنشاء الحساب بنجاح!')),
                               backgroundColor: Color(AppColors.primaryColor),
                             ),
                           );

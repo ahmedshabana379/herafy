@@ -7,6 +7,7 @@ import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:herafy/features/auth/screens/customer/customer_register_page.dart';
+import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 
 class RoleSelectionPage extends StatelessWidget {
   const RoleSelectionPage({super.key});
@@ -37,7 +38,7 @@ class RoleSelectionPage extends StatelessWidget {
       ),
       body: BlocConsumer<AuthCubit, AuthState>(
         builder: (BuildContext context, state) {
-          final Selected= context.read<AuthCubit>().selectedRole;
+          final selected = context.read<AuthCubit>().selectedRole;
           UserRole? selectedRole = (state is SelectRoleState)
               ? state.selectedRole
               : null;
@@ -71,20 +72,25 @@ class RoleSelectionPage extends StatelessWidget {
                     description: "أبحث عن فنيين وخدمات احترافية لمنزلي",
                     icon: Icons.person_search_rounded,
                     isSelected: selectedRole == UserRole.client,
-                    onTap: () => context.read<AuthCubit>().selectRole(UserRole.client),
+                    onTap: () =>
+                        context.read<AuthCubit>().selectRole(UserRole.client),
                   ),
                   const SizedBox(height: 16),
                   RoleCard(
                     role: 'مزود خدمات',
                     isSelected: selectedRole == UserRole.serviceProvider,
-                    onTap: () => context.read<AuthCubit>().selectRole(UserRole.serviceProvider),
+                    onTap: () => context.read<AuthCubit>().selectRole(
+                      UserRole.serviceProvider,
+                    ),
                     description: 'أرغب في اقديم خدماتي المهنية للعملاء',
                     icon: Icons.handyman_rounded,
                   ),
                   SizedBox(height: 40),
                   AppButton(
                     isButtonEnabled: isButtonEnabled,
-                    onPressed: () => Selected ==null? null : context.read<AuthCubit>().onContinue(),
+                    onPressed: () => selected == null
+                        ? null
+                        : context.read<AuthCubit>().onContinue(),
                     text: 'متابعة',
                   ),
                   Row(
@@ -112,12 +118,14 @@ class RoleSelectionPage extends StatelessWidget {
               ),
             ),
           );
-        }, listener: (BuildContext context, AuthState state) { 
-
-          if(state is NavigateToCustomerRegister){
+        },
+        listener: (BuildContext context, AuthState state) {
+          if (state is NavigateToCustomerRegister) {
             Navigator.pushNamed(context, CustomerRegisterPage.routeName);
-          }else if(state is NavigateToProviderRegister){}
-         },
+          } else if (state is NavigateToProviderRegister) {
+            Navigator.pushNamed(context, ProviderRegisterPage.routeName);
+          }
+        },
       ),
     );
   }
