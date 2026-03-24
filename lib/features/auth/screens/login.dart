@@ -178,6 +178,7 @@ class _LoginPageState extends State<LoginPage> {
                   BlocConsumer<AuthCubit, AuthState>(
                     builder: (context, state) {
                       return AppButton(
+                        buttonText: "... جاي التسجيل",
                         isLoading: state is LoginLoading,
                         isButtonEnabled: state is! LoginLoading,
                         onPressed: () {
@@ -202,7 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                       } else if (state is LoginError) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Center(child: Text(state.message)),
+                            content: Text(state.message),
                             backgroundColor: Colors.redAccent,
                           ),
                         );

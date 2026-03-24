@@ -21,13 +21,21 @@ class LoginError extends AuthState {
 }
 
 
-// Registration
+// Registration for client 
 
 class RegisterLoading extends AuthState {}
 class RegisterSuccess extends AuthState {}
 class RegisterError extends AuthState {
   final String message;
   RegisterError(this.message);
+}
+
+// Registration for provider
+class ProviderRegisterLoading extends AuthState {}
+class ProviderRegisterSuccess extends AuthState {}
+class ProviderRegisterError extends AuthState {
+  final String message;
+  ProviderRegisterError(this.message);
 }
 
 // Navigation

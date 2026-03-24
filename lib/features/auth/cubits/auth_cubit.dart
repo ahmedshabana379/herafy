@@ -49,7 +49,7 @@ class AuthCubit extends Cubit<AuthState> {
       emit(LoginError(e.toString()));
     }
   }
-  // registration logic
+  // registration logic for client
 
   Future<void> register({
     required String name,
@@ -64,4 +64,16 @@ class AuthCubit extends Cubit<AuthState> {
       emit(RegisterError(e.toString()));
     }
   }
+
+  // registration logic for provider
+  Future<void> providerRegister() async {
+    emit(ProviderRegisterLoading());
+    try {
+      await Future.delayed(Duration(seconds: 5));
+      emit(ProviderRegisterSuccess());
+    } catch (e) {
+      emit(ProviderRegisterError(e.toString()));
+    }
+  }
+
 }

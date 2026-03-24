@@ -7,12 +7,13 @@ class AppButton extends StatelessWidget {
     required this.isButtonEnabled,
     this.onPressed,
     required this.text,
-    this.isLoading = false,
+    this.isLoading = false,  this.buttonText,
   });
   final String text;
   final VoidCallback? onPressed;
   final bool isButtonEnabled;
   final bool isLoading;
+  final String? buttonText;
 
   @override
   Widget build(BuildContext context) {
@@ -34,14 +35,21 @@ class AppButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
+            ?  Text( buttonText! ,
+                style: TextStyle(
                   color: Color(AppColors.primaryColor),
-                  strokeWidth: 2.5,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               )
+            // SizedBox(
+            //     height: 20,
+            //     width: 20,
+            //     child: CircularProgressIndicator(
+            //       color: Color(AppColors.primaryColor),
+            //       strokeWidth: 2.5,
+            //     ),
+            //   )
             : Text(
                 text,
                 style: TextStyle(

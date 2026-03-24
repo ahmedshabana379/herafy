@@ -26,7 +26,7 @@ class RoleCard extends StatelessWidget {
         margin: EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isSelected ? Color(AppColors.fillColor) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
                 ? Color(AppColors.primaryColor)
@@ -46,14 +46,13 @@ class RoleCard extends StatelessWidget {
                   )
                 : Icon(Icons.circle_outlined, color: Colors.grey.shade400),
             SizedBox(width: 16),
-            SizedBox(width: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   role,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: isSelected
                         ? Color(AppColors.primaryColor)
@@ -64,7 +63,7 @@ class RoleCard extends StatelessWidget {
                 Text(
                   description,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 11,
                     color: isSelected
                         ? Color(AppColors.primaryColor)
                         : Colors.grey.shade600,

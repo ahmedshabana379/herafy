@@ -175,7 +175,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                         bool isLoading = state is RegisterLoading;
                         return AppButton(
                           text: "إنشاء الحساب",
-                          isButtonEnabled: true,
+                          isButtonEnabled: !isLoading,
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
                               context.read<AuthCubit>().register(
@@ -192,7 +192,9 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                         if (state is RegisterSuccess) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Center(child: Text('تم إنشاء الحساب بنجاح!')),
+                              content: Center(
+                                child: Text('تم إنشاء الحساب بنجاح!'),
+                              ),
                               backgroundColor: Color(AppColors.primaryColor),
                             ),
                           );

@@ -117,6 +117,7 @@ class FirstRegisterationStep extends StatelessWidget {
                 }
               },
             ),
+            SizedBox(height: 20),
           ],
         ),
       ),
