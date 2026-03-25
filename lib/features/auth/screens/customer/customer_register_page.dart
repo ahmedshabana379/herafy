@@ -212,6 +212,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                   ],
                 ),
               ),
+              SizedBox(height: 20),
             ],
           ),
         ),
