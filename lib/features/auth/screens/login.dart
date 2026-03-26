@@ -7,6 +7,7 @@ import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:herafy/features/auth/screens/role_selection.dart';
+import 'package:herafy/features/home/screens/home_main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -198,7 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                         saveUserData();
                         Navigator.pushNamed(
                           context,
-                          RoleSelectionPage.routeName,
+                          HomePage.routeName,
                         );
                       } else if (state is LoginError) {
                         ScaffoldMessenger.of(context).showSnackBar(
