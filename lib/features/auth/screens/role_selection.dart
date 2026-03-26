@@ -22,6 +22,7 @@ class RoleSelectionPage extends StatelessWidget {
         centerTitle: true,
         title: Row(
           mainAxisSize: MainAxisSize.min,
+
           children: [
             Icon(Icons.handyman_rounded, color: Color(0xFF2b2854)),
             const SizedBox(width: 8),
@@ -48,10 +49,11 @@ class RoleSelectionPage extends StatelessWidget {
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     "إنشاء حساب جديد",
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 36,
                       fontWeight: FontWeight.bold,
@@ -61,6 +63,8 @@ class RoleSelectionPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     'اختر نوع الحساب للبدء في استخدام تطبيق حرفي',
+                    textAlign: TextAlign.center,
+
                     style: TextStyle(
                       fontSize: 20,
                       color: Color(AppColors.secondaryColor),

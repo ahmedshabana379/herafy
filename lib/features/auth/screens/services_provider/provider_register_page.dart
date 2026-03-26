@@ -82,87 +82,84 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsetsGeometry.symmetric(horizontal: horizontalPadding),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Color(AppColors.cardsColor),
-                    child: Text(
-                      "${_currentPage + 1}",
-                      style: TextStyle(
-                        color: Color(AppColors.primaryColor),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+      body: Padding(
+        padding: EdgeInsetsGeometry.symmetric(horizontal: horizontalPadding),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Color(AppColors.cardsColor),
+                  child: Text(
+                    "${_currentPage + 1}",
+                    style: TextStyle(
+                      color: Color(AppColors.primaryColor),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ],
-              ),
-              SizedBox(height: 4),
+                ),
+              ],
+            ),
+            SizedBox(height: 4),
 
-              LinearProgressIndicator(
-                value: (_currentPage + 1) / 2,
-                backgroundColor: Colors.grey[200],
+            LinearProgressIndicator(
+              value: (_currentPage + 1) / 2,
+              backgroundColor: Colors.grey[200],
+              color: Color(AppColors.primaryColor),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Color(AppColors.cardsColor),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: Icon(
+                Icons.handyman_rounded,
+                size: 70,
                 color: Color(AppColors.primaryColor),
               ),
-              const SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Color(AppColors.cardsColor),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Icon(
-                  Icons.handyman_rounded,
-                  size: 70,
-                  color: Color(AppColors.primaryColor),
-                ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "إنضم إلى حرفي",
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: Color(AppColors.primaryColor),
               ),
-              const SizedBox(height: 10),
-              Text(
-                "إنضم إلى حرفي",
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Color(AppColors.primaryColor),
-                ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'إبدا رحلتك المهنية مع تطبيق حرفي الأن',
+              style: TextStyle(
+                fontSize: 20,
+                color: Color(AppColors.secondaryColor),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'إبدا رحلتك المهنية مع تطبيق حرفي الأن',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Color(AppColors.secondaryColor),
-                ),
-                textAlign: TextAlign.center,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            Expanded(
+              child: PageView(
+                controller: _pageController,
+                physics: NeverScrollableScrollPhysics(),
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                children: [
+                  FirstRegisterationStep(
+                    onNext: nextStep,
+                    formKey: _formKey,
+                    nameController: _nameController,
+                    emailController: _emailController,
+                    passwordController: _passwordController,
+                    confirmPasswordController: _confirmPasswordController,
+                  ),
+                  SecondRegisterationStep(onBack: previousStep),
+                ],
               ),
-              const SizedBox(height: 40),
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: NeverScrollableScrollPhysics(),
-                  onPageChanged: (index) =>
-                      setState(() => _currentPage = index),
-                  children: [
-                    FirstRegisterationStep(
-                      onNext: nextStep,
-                      formKey: _formKey,
-                      nameController: _nameController,
-                      emailController: _emailController,
-                      passwordController: _passwordController,
-                      confirmPasswordController: _confirmPasswordController,
-                    ),
-                    SecondRegisterationStep(onBack: previousStep),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
