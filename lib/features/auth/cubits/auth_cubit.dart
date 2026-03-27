@@ -1,6 +1,11 @@
+import 'package:dio/dio.dart';
+import 'package:herafy/core/networks/cache_helper.dart';
+import 'package:herafy/core/networks/dio_helpers.dart';
+import 'package:herafy/core/networks/end_points.dart';
 import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/features/auth/models/user_model.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
@@ -43,10 +48,24 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> login({required String email, required String password}) async {
     emit(LoginLoading());
     try {
-      await Future.delayed(Duration(seconds: 5));
-      emit(LoginSuccess());
-    } catch (e) {
-      emit(LoginError(e.toString()));
+      final response = await DioHelper.postRequest(
+        endPoint: AppEndPoints.login,
+        data: {"email": email, "password": password},
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        UserModel user = UserModel.fromJson(response.data);
+        if (user.accessToken != null) {
+          await CacheHelper.saveToken(user.accessToken!);
+        }
+        emit(LoginSuccess());
+      } else {
+        emit(LoginError("فشل تسجيل الدخول: تأكد من البيانات"));
+      }
+    } on DioException catch (e) {
+      String message = e.response?.data['message'] ?? "حدث خطأ في الاتصال";
+      emit(LoginError(message));
+    }catch (e) {
+      emit(LoginError("حدث خطأ غير متوقع: ${e.toString()}"));
     }
   }
   // registration logic for client
@@ -75,5 +94,4 @@ class AuthCubit extends Cubit<AuthState> {
       emit(ProviderRegisterError(e.toString()));
     }
   }
-
 }
