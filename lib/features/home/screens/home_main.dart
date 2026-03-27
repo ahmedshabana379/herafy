@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:herafy/features/home/widgets/bar_of_tapbar_buttons.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

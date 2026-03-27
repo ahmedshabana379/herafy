@@ -5,17 +5,25 @@ import 'package:herafy/core/networks/end_points.dart';
 import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/features/auth/models/gov_and_regions_model.dart';
+import 'package:herafy/features/auth/models/services_model.dart';
 import 'package:herafy/features/auth/models/user_model.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
+  // services
+  List<ServiceModel> services = [];
+  // governates nad regions
+  List<GovernorateModel> governorates = [];
+  List<RegionModel> filteredRegions = [];
   // provider data
   String? providerName;
   String? providerEmail;
   String? providerPassword;
   String? providerCategory;
   String? providerSubCategory;
-  String? providerCity;
+  String? providerGovernateId;
+  String? providerRegionId;
   String? provideraddress;
   String? providerRange;
   String? idCardImagePath;
@@ -64,7 +72,7 @@ class AuthCubit extends Cubit<AuthState> {
     } on DioException catch (e) {
       String message = e.response?.data['message'] ?? "حدث خطأ في الاتصال";
       emit(LoginError(message));
-    }catch (e) {
+    } catch (e) {
       emit(LoginError("حدث خطأ غير متوقع: ${e.toString()}"));
     }
   }
@@ -92,6 +100,51 @@ class AuthCubit extends Cubit<AuthState> {
       emit(ProviderRegisterSuccess());
     } catch (e) {
       emit(ProviderRegisterError(e.toString()));
+    }
+  }
+
+  // governates and regions fetch logic
+  Future<void> getGovernatesData() async {
+    try {
+      emit(GetRegionsLoading());
+      final response = await DioHelper.getRequest(
+        endPoint: AppEndPoints.regionsAndGavernates,
+      );
+      if (response.statusCode == 200) {
+        governorates = (response.data as List)
+            .map((e) => GovernorateModel.fromJson(e))
+            .toList();
+        emit(GetRegionsSuccess());
+      }
+    } catch (e) {
+      emit(GetRegionsError(e.toString()));
+    }
+  }
+
+  // 2. ميثود اختيار المحافظة (بناديها لما الدروب داون تتغير)
+  void onGovernateSelectedState(GovernorateModel selectedGov) {
+    if (selectedGov != null) {
+      filteredRegions = selectedGov.regions ?? [];
+      emit(GovernorateSelectedState());
+    }
+  }
+
+  // fetch services logic
+
+  Future<void> getServicesData() async {
+    try {
+      emit(GetServicesLoading());
+      final response = await DioHelper.getRequest(
+        endPoint: AppEndPoints.services,
+      );
+      if (response.statusCode == 200) {
+        services = (response.data as List)
+            .map((s) => ServiceModel.fromJson(s))
+            .toList();
+        emit(GetServicesSuccess());
+      }
+    } catch (e) {
+      emit(GetServicesError(e.toString()));
     }
   }
 }

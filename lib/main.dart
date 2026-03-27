@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/networks/dio_helpers.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/screens/customer/customer_register_page.dart';
 import 'package:herafy/features/auth/screens/login.dart';
@@ -9,8 +10,11 @@ import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
 
 void main() {
-  runApp(BlocProvider(create :(context) => AuthCubit(),
-  child: const HerafyApp()));
+  WidgetsFlutterBinding.ensureInitialized();
+  DioHelper.initDio();
+  runApp(
+    BlocProvider(create: (context) => AuthCubit(), child: const HerafyApp()),
+  );
 }
 
 class HerafyApp extends StatelessWidget {
@@ -20,14 +24,15 @@ class HerafyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      
       routes: {
         RoleSelectionPage.routeName: (context) => const RoleSelectionPage(),
         LoginPage.routeName: (context) => const LoginPage(),
-        CustomerRegisterPage.routeName: (context) => const CustomerRegisterPage(),
-        ProviderRegisterPage.routeName: (context) => const ProviderRegisterPage(),
-        WaitingApprovePage.routeName:(context)=> const WaitingApprovePage(),
-        HomePage.routeName : (context)=> const HomePage(),
+        CustomerRegisterPage.routeName: (context) =>
+            const CustomerRegisterPage(),
+        ProviderRegisterPage.routeName: (context) =>
+            const ProviderRegisterPage(),
+        WaitingApprovePage.routeName: (context) => const WaitingApprovePage(),
+        HomePage.routeName: (context) => const HomePage(),
       },
       debugShowCheckedModeBanner: false,
       initialRoute: LoginPage.routeName,
