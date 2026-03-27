@@ -4,27 +4,30 @@ abstract class AuthState {}
 
 // selectRole
 class AuthInitial extends AuthState {}
+
 class SelectRoleState extends AuthState {
-  final UserRole selectedRole; 
+  final UserRole selectedRole;
 
   SelectRoleState(this.selectedRole);
 }
 
+//login
 
-//login 
+class LoginLoading extends AuthState {}
 
-class LoginLoading extends AuthState {}  
 class LoginSuccess extends AuthState {}
+
 class LoginError extends AuthState {
   final String message;
   LoginError(this.message);
 }
 
-
-// Registration for client 
+// Registration for client
 
 class RegisterLoading extends AuthState {}
+
 class RegisterSuccess extends AuthState {}
+
 class RegisterError extends AuthState {
   final String message;
   RegisterError(this.message);
@@ -32,7 +35,9 @@ class RegisterError extends AuthState {
 
 // Registration for provider
 class ProviderRegisterLoading extends AuthState {}
+
 class ProviderRegisterSuccess extends AuthState {}
+
 class ProviderRegisterError extends AuthState {
   final String message;
   ProviderRegisterError(this.message);
@@ -40,5 +45,29 @@ class ProviderRegisterError extends AuthState {
 
 // Navigation
 
-class NavigateToCustomerRegister extends AuthState{}
-class NavigateToProviderRegister extends AuthState{}
+class NavigateToCustomerRegister extends AuthState {}
+
+class NavigateToProviderRegister extends AuthState {}
+
+// حالة تحديث الـ UI بعد اختيار المحافظة (الفلترة)
+class GovernorateSelectedState extends AuthState {}
+
+// --- Regions & Governorates States (اللي بنجيب بيها المناطق) ---
+class GetRegionsLoading extends AuthState {}
+
+class GetRegionsSuccess extends AuthState {}   
+
+class GetRegionsError extends AuthState {
+  final String message;
+  GetRegionsError(this.message);
+}
+
+// حالات جلب الحرف (Services)
+class GetServicesLoading extends AuthState {}
+
+class GetServicesSuccess extends AuthState {}
+
+class GetServicesError extends AuthState {
+  final String message;
+  GetServicesError(this.message);
+}

@@ -10,6 +10,8 @@ import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/core/resourses/constants.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
+import 'package:herafy/features/auth/models/gov_and_regions_model.dart';
+import 'package:herafy/features/auth/models/services_model.dart';
 import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -25,11 +27,11 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
   String? selectedSubCategory;
   String? selectedMainCategory;
   File? _idCardImage;
-  final TextEditingController _cityController = TextEditingController();
   final TextEditingController _rangeController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  RegionModel? selectedRegion;
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -43,6 +45,13 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    context.read<AuthCubit>().getGovernatesData();
+    context.read<AuthCubit>().getServicesData();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Form(
@@ -53,71 +62,174 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
           children: [
             SectionHeader(icon: Icons.work_outline, title: "المهنة والموقع"),
             TextFieldLabel(title: "اختر المهنة الرئيسية"),
-            DropdownButtonFormField<String>(
-              validator: (value) =>
-                  value == null ? 'الرجاء اختيار المهنة الرئيسية' : null,
-              items: herafyCategories
-                  .map(
-                    (category) => DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
+            BlocBuilder<AuthCubit, AuthState>(
+              buildWhen: (previous, current) =>
+                  current is GetServicesSuccess ||
+                  current is GetServicesLoading,
+              builder: (context, state) {
+                var cubit = context.read<AuthCubit>();
+
+                if (state is GetServicesLoading) {
+                  return const LinearProgressIndicator();
+                }
+
+                return DropdownButtonFormField<ServiceModel>(
+                  initialValue:
+                      cubit.services.any((s) => s.name == selectedMainCategory)
+                      ? cubit.services.firstWhere(
+                          (s) => s.name == selectedMainCategory,
+                        )
+                      : null,
+                  validator: (value) =>
+                      value == null ? 'الرجاء اختيار المهنة الرئيسية' : null,
+                  items: cubit.services
+                      .map(
+                        (service) => DropdownMenuItem<ServiceModel>(
+                          value: service,
+                          child: Text(service.name ?? ""),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedMainCategory = value?.name;
+                      selectedSubCategory = null;
+                    });
+                    cubit.providerCategory = value?.id.toString();
+                  },
+                  hint: const Text("اختر من القائمة"),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.work_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() {
-                selectedMainCategory = value;
-                selectedSubCategory = null;
-              }),
-              initialValue: selectedMainCategory,
-              hint: Text("اختر من القائمة"),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.work_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+                  ),
+                );
+              },
             ),
             SizedBox(height: 10),
             TextFieldLabel(title: "المهنة الفرعية (إختياري)"),
-            DropdownButtonFormField<String>(
-              items: herafyCategories
-                  .where((category) => category != selectedMainCategory)
-                  .map(
-                    (category) => DropdownMenuItem<String>(
-                      value: category,
-                      child: Text(category),
+            BlocBuilder<AuthCubit, AuthState>(
+              buildWhen: (previous, current) =>
+                  current is GetServicesSuccess ||
+                  current is GetServicesLoading,
+              builder: (context, state) {
+                var cubit = context.read<AuthCubit>();
+
+                return DropdownButtonFormField<ServiceModel>(
+                  initialValue:
+                      cubit.services.any((s) => s.name == selectedSubCategory)
+                      ? cubit.services.firstWhere(
+                          (s) => s.name == selectedSubCategory,
+                        )
+                      : null,
+                  items: cubit.services
+                      .where((service) => service.name != selectedMainCategory)
+                      .map(
+                        (service) => DropdownMenuItem<ServiceModel>(
+                          value: service,
+                          child: Text(service.name ?? ""),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedSubCategory = value?.name;
+                    });
+                    cubit.providerSubCategory = value?.id.toString();
+                  },
+                  hint: const Text("اختر من القائمة"),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.work_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() {
-                selectedSubCategory = value;
-              }),
-              initialValue: selectedSubCategory,
-              hint: Text("اختر من القائمة"),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.work_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+                  ),
+                );
+              },
             ),
             const Divider(height: 40),
             SectionHeader(
               icon: Icons.location_on_rounded,
               title: "الموقع ونطاق العمل",
             ),
-            TextFieldLabel(title: "المدينة"),
-            CustomTextField(
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'الرجاء إدخال المدينة';
+            TextFieldLabel(title: "المحافظة"),
+            BlocBuilder<AuthCubit, AuthState>(
+              buildWhen: (previous, current) =>
+                  current is GetRegionsSuccess ||
+                  current is GetRegionsLoading ||
+                  current is GetRegionsError,
+              builder: (context, state) {
+                var cubit = context.read<AuthCubit>();
+
+                if (state is GetRegionsLoading) {
+                  return LinearProgressIndicator();
                 }
-                return null;
+
+                return DropdownButtonFormField<GovernorateModel>(
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.location_city_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  hint: Text("اختر المحافظة"),
+                  items: cubit.governorates
+                      .map(
+                        (gov) => DropdownMenuItem(
+                          value: gov,
+                          child: Text(gov.name ?? ""),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (selectedGov) {
+                    setState(() {
+                      selectedRegion = null;
+                    });
+                    cubit.onGovernateSelectedState(selectedGov!);
+                  },
+                );
               },
-              isPassword: false,
-              hintText: "أدخل مدينتك",
-              icon: Icons.location_city_outlined,
-              controller: _cityController,
+            ),
+
+            const SizedBox(height: 10),
+            TextFieldLabel(title: "المنطقة"),
+            BlocBuilder<AuthCubit, AuthState>(
+              buildWhen: (previous, current) =>
+                  current is GovernorateSelectedState ||
+                  current is GetRegionsSuccess,
+              builder: (context, state) {
+                var cubit = context.read<AuthCubit>();
+                if (selectedRegion != null &&
+                    !cubit.filteredRegions.contains(selectedRegion)) {
+                  selectedRegion = null;
+                }
+                return DropdownButtonFormField<RegionModel>(
+                  initialValue: selectedRegion,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.pin_drop_outlined),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  hint: Text("اختر المنطقة"),
+                  items: cubit.filteredRegions
+                      .map(
+                        (region) => DropdownMenuItem(
+                          value: region,
+                          child: Text(region.name ?? ""),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      selectedRegion = val;
+                    });
+                    cubit.providerCity = val?.name;
+                    cubit.providerRegionId = val!.id.toString();
+                  },
+                );
+              },
             ),
             const SizedBox(height: 10),
             TextFieldLabel(title: "نطاق العمل (كم)"),
@@ -284,19 +396,13 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                             ],
                           ),
                         );
-                        // ScaffoldMessenger.of(context).showSnackBar(
-                        //   SnackBar(
-                        //     content: Center(child: Text('الرجاء تحميل صورة بطاقة الهوية')),
-                        //     backgroundColor: Colors.redAccent,
-                        //   ),
-                        // );
+
                         return;
                       }
 
                       final cubit = context.read<AuthCubit>();
                       cubit.providerCategory = selectedMainCategory;
                       cubit.providerSubCategory = selectedSubCategory;
-                      cubit.providerCity = _cityController.text;
                       cubit.providerRange = _rangeController.text;
                       cubit.provideraddress = _addressController.text;
                       cubit.idCardImagePath = _idCardImage!.path;
