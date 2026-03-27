@@ -34,9 +34,8 @@ class HomePage extends StatelessWidget {
         ),
       ),
       drawer: Drawer(),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-        child: Column(children: [SizedBox(height: 10), ButtonsHomeBar()]),
+      body: CustomScrollView(
+        slivers: [SliverToBoxAdapter(child: SizedBox(height: 20))],
       ),
     );
   }
