@@ -11,19 +11,19 @@ import 'package:herafy/features/auth/models/user_model.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
-  // services
-  List<ServiceModel> services = [];
-  // governates nad regions
+// services
+List<ServiceModel> services = [];
+// governates nad regions
   List<GovernorateModel> governorates = [];
   List<RegionModel> filteredRegions = [];
   // provider data
   String? providerName;
   String? providerEmail;
   String? providerPassword;
-  String? providerCategory;
-  String? providerSubCategory;
-  String? providerGovernateId;
-  String? providerRegionId;
+String? providerCategory;
+String? providerSubCategory;
+String? providerGovernateId;
+String? providerRegionId;
   String? provideraddress;
   String? providerRange;
   String? idCardImagePath;
@@ -137,10 +137,10 @@ class AuthCubit extends Cubit<AuthState> {
       final response = await DioHelper.getRequest(
         endPoint: AppEndPoints.services,
       );
-      if (response.statusCode == 200) {
-        services = (response.data as List)
-            .map((s) => ServiceModel.fromJson(s))
-            .toList();
+if (response.statusCode == 200) {
+  services = (response.data as List)
+      .map((s) => ServiceModel.fromJson(s))
+      .toList();
         emit(GetServicesSuccess());
       }
     } catch (e) {

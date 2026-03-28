@@ -175,7 +175,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                   hint: Text("اختر المحافظة"),
                   items: cubit.governorates
                       .map(
-                        (gov) => DropdownMenuItem(
+                        (gov) => DropdownMenuItem<GovernorateModel>(
                           value: gov,
                           child: Text(gov.name ?? ""),
                         ),
@@ -224,7 +224,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                     setState(() {
                       selectedRegion = val;
                     });
-                    cubit.providerGovernateId = val?.name;
+
                     cubit.providerRegionId = val!.id.toString();
                   },
                 );

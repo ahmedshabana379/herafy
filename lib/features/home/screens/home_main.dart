@@ -83,7 +83,6 @@ class _HomePageState extends State<HomePage> {
       drawer: Drawer(),
       body: Column(
         children: [
-          // الـ bar بتظهر وتختفي
           AnimatedContainer(
             duration: Duration(milliseconds: 300),
             height: _isBarVisible ? 80 : 0,
