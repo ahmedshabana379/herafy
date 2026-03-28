@@ -7,28 +7,47 @@ class HomeIcon extends StatelessWidget {
     required this.text,
     required this.icon,
     required this.onTap,
+    this.isSelected = false,
   });
+
   final String text;
   final IconData icon;
   final VoidCallback onTap;
+  final bool isSelected;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Color(AppColors.cardsColor),
+              color: isSelected
+                  ? Color(AppColors.primaryColor)  // ← لما يكون selected
+                  : Color(AppColors.cardsColor),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(icon, size: 24, color: Color(AppColors.primaryColor)),
+            child: Icon(
+              icon,
+              size: 24,
+              color: isSelected
+                  ? Colors.white
+                  : Color(AppColors.primaryColor),
+            ),
           ),
           SizedBox(height: 5),
-          Text(text, style: TextStyle(color: Color(AppColors.secondaryColor))),
+          Text(
+            text,
+            style: TextStyle(
+              color: isSelected
+                  ? Color(AppColors.primaryColor)
+                  : Color(AppColors.secondaryColor),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
         ],
       ),
     );
