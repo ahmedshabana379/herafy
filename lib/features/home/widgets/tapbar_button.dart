@@ -26,7 +26,7 @@ class HomeIcon extends StatelessWidget {
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isSelected
-                  ? Color(AppColors.primaryColor)  // ← لما يكون selected
+                  ? Color(AppColors.primaryColor)  
                   : Color(AppColors.cardsColor),
               borderRadius: BorderRadius.circular(15),
             ),

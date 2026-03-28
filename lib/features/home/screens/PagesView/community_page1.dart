@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:herafy/features/home/widgets/post_card.dart';
 
 class CommunityPage extends StatelessWidget {
-  const CommunityPage({super.key});
-
-  // داتا وهمية للتجربة
+  const CommunityPage({super.key, this.scrollController});
+final ScrollController? scrollController;
   static const List<Map<String, dynamic>> _mockPosts = [
     {
       "isServiceOffer": false,
@@ -114,21 +113,25 @@ class CommunityPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: _mockPosts.length,
-      itemBuilder: (context, index) {
-        final post = _mockPosts[index];
-        return PostCard(
-          providerName: post["name"],
-          providerJob: post["job"],
-          timeAgo: post["time"],
-          description: post["desc"],
-          imageUrl: post["image"],
-          likesCount: post["likes"],
-          commentsCount: post["comments"],
-          isServiceOffer: post["isServiceOffer"] ?? false,
-        );
-      },
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: ListView.builder(
+        controller: scrollController,
+        itemCount: _mockPosts.length,
+        itemBuilder: (context, index) {
+          final post = _mockPosts[index];
+          return PostCard(
+            providerName: post["name"],
+            providerJob: post["job"],
+            timeAgo: post["time"],
+            description: post["desc"],
+            imageUrl: post["image"],
+            likesCount: post["likes"],
+            commentsCount: post["comments"],
+            isServiceOffer: post["isServiceOffer"] ?? false,
+          );
+        },
+      ),
     );
   }
 }

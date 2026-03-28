@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/screens/PagesView/community_page1.dart';
+import 'package:herafy/features/home/screens/PagesView/quick_request_page.dart';
 import 'package:herafy/features/home/widgets/bar_of_tapbar_buttons.dart';
 import 'package:herafy/features/home/widgets/post_type_sheet.dart';
 
@@ -39,24 +40,28 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double horizontalPadding = screenWidth * 0.05;
     return Scaffold(
       floatingActionButton: _selectedIndex == 0
-    ? FloatingActionButton(
-        backgroundColor: Color(AppColors.primaryColor),
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (context) => PostTypeSheet(),
-          );
-        },
-        child: Icon(Icons.add, color: Colors.white),
-      )
-    : null,
+          ? AnimatedScale(
+              scale: _isBarVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 200),
+              child: FloatingActionButton(
+                backgroundColor: Color(AppColors.primaryColor),
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    builder: (context) => PostTypeSheet(),
+                  );
+                },
+                child: Icon(Icons.add, color: Colors.white),
+              ),
+            )
+          : null,
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -91,12 +96,20 @@ class _HomePageState extends State<HomePage> {
               child: ButtonsHomeBar(
                 selectedIndex: _selectedIndex,
                 onTap: (index) {
-                  setState(() => _selectedIndex = index);
-                  _pageController.animateToPage(
-                    index,
-                    duration: Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                  );
+                  if (_selectedIndex == index && index == 0) {
+                    _scrollController.animateTo(
+                      0,
+                      duration: Duration(milliseconds: 500),
+                      curve: Curves.easeOut,
+                    );
+                  } else {
+                    setState(() => _selectedIndex = index);
+                    _pageController.animateToPage(
+                      index,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  }
                 },
               ),
             ),
@@ -109,8 +122,8 @@ class _HomePageState extends State<HomePage> {
                 setState(() => _selectedIndex = index);
               },
               children: [
-                CommunityPage(),
-                Center(child: Text("طلب خدمة")),
+                CommunityPage(scrollController: _scrollController),
+                QuickRequestPage(),
                 Center(child: Text("العروض")),
                 Center(child: Text("المحادثات")),
               ],

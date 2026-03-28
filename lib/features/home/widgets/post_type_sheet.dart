@@ -37,11 +37,6 @@ class PostTypeSheet extends StatelessWidget {
             description: "انشر عرضك وخلي العملاء يطلبوا خدمتك مباشرة",
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(
-                context,
-                "/create-post",
-                arguments: "service",
-              );
             },
           ),
           const SizedBox(height: 12),
