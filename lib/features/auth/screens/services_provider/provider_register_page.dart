@@ -18,6 +18,12 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
       TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
+  double _progress = 0.0;
+
+  void _updateProgress(double progress) {
+    setState(() => _progress = progress);
+  }
+
   int _currentPage = 0;
   void nextStep() {
     if (_currentPage < 2) {
@@ -87,28 +93,33 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
         child: Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  backgroundColor: Color(AppColors.cardsColor),
-                  child: Text(
-                    "${_currentPage + 1}",
-                    style: TextStyle(
-                      color: Color(AppColors.primaryColor),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 4),
-
-            LinearProgressIndicator(
-              value: (_currentPage + 1) / 2,
-              backgroundColor: Colors.grey[200],
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            "${(_progress * 100).toInt()}%",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
               color: Color(AppColors.primaryColor),
             ),
+          ),
+          Text(
+            "التقدم الحالي",
+            style: TextStyle(
+              color: Color(AppColors.secondaryColor),
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 8),
+
+           LinearProgressIndicator(
+        value: _progress,
+        backgroundColor: Colors.grey[200],
+        color: Color(AppColors.primaryColor),
+        borderRadius: BorderRadius.circular(10),
+        minHeight: 6,
+      ),
             const SizedBox(height: 20),
             Container(
               padding: EdgeInsets.all(12),
@@ -148,6 +159,7 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
                 onPageChanged: (index) => setState(() => _currentPage = index),
                 children: [
                   FirstRegisterationStep(
+                    onProgressChanged:  _updateProgress,
                     onNext: nextStep,
                     formKey: _formKey,
                     nameController: _nameController,
@@ -155,7 +167,7 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
                     passwordController: _passwordController,
                     confirmPasswordController: _confirmPasswordController,
                   ),
-                  SecondRegisterationStep(onBack: previousStep),
+                  SecondRegisterationStep(onBack: previousStep, onProgressChanged: _updateProgress),
                 ],
               ),
             ),

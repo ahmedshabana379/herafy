@@ -5,7 +5,7 @@ import 'package:herafy/core/components/custom_text_field.dart';
 import 'package:herafy/core/components/text-field-label.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 
-class FirstRegisterationStep extends StatelessWidget {
+class FirstRegisterationStep extends StatefulWidget {
   const FirstRegisterationStep({
     super.key,
     required GlobalKey<FormState> formKey,
@@ -14,6 +14,7 @@ class FirstRegisterationStep extends StatelessWidget {
     required TextEditingController passwordController,
     required TextEditingController confirmPasswordController,
     required this.onNext,
+    required this.onProgressChanged,
   }) : _formKey = formKey,
        _nameController = nameController,
        _emailController = emailController,
@@ -26,12 +27,42 @@ class FirstRegisterationStep extends StatelessWidget {
   final TextEditingController _passwordController;
   final TextEditingController _confirmPasswordController;
   final VoidCallback onNext;
+  final Function(double) onProgressChanged;
+
+  @override
+  State<FirstRegisterationStep> createState() => _FirstRegisterationStepState();
+}
+
+class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
+  void _calculateProgress() {
+    int filled = 0;
+    const int total = 10; // إجمالي كل الـ fields في الصفحتين
+
+    if (widget._nameController.text.trim().length >= 3) filled++;
+    if (widget._emailController.text.trim().isNotEmpty) filled++;
+    if (widget._passwordController.text.length >= 6) filled++;
+    if (widget._confirmPasswordController.text ==
+            widget._passwordController.text &&
+        widget._confirmPasswordController.text.isNotEmpty)
+      filled++;
+
+    widget.onProgressChanged(filled / total);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget._nameController.addListener(_calculateProgress);
+    widget._emailController.addListener(_calculateProgress);
+    widget._passwordController.addListener(_calculateProgress);
+    widget._confirmPasswordController.addListener(_calculateProgress);
+  }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Form(
-        key: _formKey,
+        key: widget._formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -40,7 +71,7 @@ class FirstRegisterationStep extends StatelessWidget {
               isPassword: false,
               hintText: "أدخل إسمك بالكامل",
               icon: Icons.person_outline,
-              controller: _nameController,
+              controller: widget._nameController,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'الرجاء إدخال الاسم الكامل';
@@ -53,7 +84,7 @@ class FirstRegisterationStep extends StatelessWidget {
             const SizedBox(height: 10),
             TextFieldLabel(title: "البريد الإلكتروني"),
             CustomTextField(
-              controller: _emailController,
+              controller: widget._emailController,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'الرجاء إدخال البريد الإلكتروني';
@@ -71,7 +102,7 @@ class FirstRegisterationStep extends StatelessWidget {
             const SizedBox(height: 10),
             TextFieldLabel(title: "كلمة المرور"),
             CustomTextField(
-              controller: _passwordController,
+              controller: widget._passwordController,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'الرجاء إدخال كلمة المرور';
@@ -88,12 +119,12 @@ class FirstRegisterationStep extends StatelessWidget {
             const SizedBox(height: 10),
             TextFieldLabel(title: "تأكيد كلمة المرور"),
             CustomTextField(
-              controller: _confirmPasswordController,
+              controller: widget._confirmPasswordController,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'الرجاء تأكيد كلمة المرور';
                 }
-                if (value != _passwordController.text) {
+                if (value != widget._passwordController.text) {
                   return 'كلمتا المرور غير متطابقتين';
                 }
                 return null;
@@ -108,13 +139,14 @@ class FirstRegisterationStep extends StatelessWidget {
               text: "متابعة",
               isLoading: false,
               onPressed: () {
-                if (_formKey.currentState!.validate()) {
+                if (widget._formKey.currentState!.validate()) {
                   final cubit = context.read<AuthCubit>();
-                  cubit.providerName = _nameController.text.trim();
-                  cubit.providerEmail = _emailController.text.trim();
-                  cubit.providerPassword = _passwordController.text.trim();
-      
-                  onNext();
+                  cubit.providerName = widget._nameController.text.trim();
+                  cubit.providerEmail = widget._emailController.text.trim();
+                  cubit.providerPassword = widget._passwordController.text
+                      .trim();
+
+                  widget.onNext();
                 }
               },
             ),

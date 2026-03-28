@@ -15,8 +15,13 @@ import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
 import 'package:image_picker/image_picker.dart';
 
 class SecondRegisterationStep extends StatefulWidget {
-  const SecondRegisterationStep({super.key, this.onBack});
+  const SecondRegisterationStep({
+    required this.onProgressChanged,
+    super.key,
+    this.onBack,
+  });
   final VoidCallback? onBack;
+  final Function(double) onProgressChanged;
   @override
   State<SecondRegisterationStep> createState() =>
       _SecondRegisterationStepState();
@@ -31,6 +36,23 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   RegionModel? selectedRegion;
+  GovernorateModel? selectedGovernorate;
+
+  void _calculateProgress() {
+    int filled = 0;
+    const int total = 10;
+
+    filled += 4;
+
+    if (selectedMainCategory != null) filled++;
+    if (selectedGovernorate != null) filled++;
+    if (selectedRegion != null) filled++;
+    if (_rangeController.text.isNotEmpty) filled++;
+    if (_addressController.text.isNotEmpty) filled++;
+    if (_idCardImage != null) filled++;
+
+    widget.onProgressChanged(filled / total);
+  }
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -40,6 +62,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
       setState(() {
         _idCardImage = File(image.path);
       });
+      _calculateProgress();
     }
   }
 
@@ -48,6 +71,8 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
     super.initState();
     context.read<AuthCubit>().getGovernatesData();
     context.read<AuthCubit>().getServicesData();
+    _rangeController.addListener(_calculateProgress);
+    _addressController.addListener(_calculateProgress);
   }
 
   @override
@@ -95,6 +120,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                       selectedSubCategory = null;
                     });
                     cubit.providerCategory = value?.id.toString();
+                    _calculateProgress();
                   },
                   hint: const Text("اختر من القائمة"),
                   decoration: InputDecoration(
@@ -183,9 +209,11 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                       .toList(),
                   onChanged: (selectedGov) {
                     setState(() {
+                      selectedGovernorate = selectedGov;
                       selectedRegion = null;
                     });
                     cubit.onGovernateSelectedState(selectedGov!);
+                    _calculateProgress();
                   },
                 );
               },
@@ -224,7 +252,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                     setState(() {
                       selectedRegion = val;
                     });
-
+                    _calculateProgress();
                     cubit.providerRegionId = val!.id.toString();
                   },
                 );
@@ -422,7 +450,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      backgroundColor: Colors.green,
+                      backgroundColor: Color(AppColors.primaryColor),
                     ),
                   );
                 }
