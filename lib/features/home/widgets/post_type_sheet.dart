@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/home/screens/create_post_screen.dart';
 
 class PostTypeSheet extends StatelessWidget {
   const PostTypeSheet({super.key});
@@ -36,7 +37,11 @@ class PostTypeSheet extends StatelessWidget {
             title: "عرض خدمة",
             description: "انشر عرضك وخلي العملاء يطلبوا خدمتك مباشرة",
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pushNamed(
+                context,
+                CreatePostScreen.routeName,
+                arguments: "service",
+              );
             },
           ),
           const SizedBox(height: 12),
@@ -48,9 +53,10 @@ class PostTypeSheet extends StatelessWidget {
             description: "شارك شغلك مع المجتمع بدون طلب خدمة",
             onTap: () {
               Navigator.pop(context);
+              // أو
               Navigator.pushNamed(
                 context,
-                "/create-post",
+                CreatePostScreen.routeName,
                 arguments: "general",
               );
             },

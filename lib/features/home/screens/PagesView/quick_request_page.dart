@@ -10,7 +10,11 @@ class QuickRequestPage extends StatefulWidget {
   State<QuickRequestPage> createState() => _QuickRequestPageState();
 }
 
-class _QuickRequestPageState extends State<QuickRequestPage> {
+class _QuickRequestPageState extends State<QuickRequestPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  // TODO: implement wantKeepAlive
+  bool get wantKeepAlive => true;
   String? selectedService;
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _budgetController = TextEditingController();
@@ -61,6 +65,7 @@ class _QuickRequestPageState extends State<QuickRequestPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return SingleChildScrollView(
       controller: widget.scrollController,
       padding: const EdgeInsets.all(16),

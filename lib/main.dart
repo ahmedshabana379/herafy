@@ -7,6 +7,7 @@ import 'package:herafy/features/auth/screens/login.dart';
 import 'package:herafy/features/auth/screens/role_selection.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
+import 'package:herafy/features/home/screens/create_post_screen.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
 
 void main() {
@@ -33,6 +34,8 @@ class HerafyApp extends StatelessWidget {
             const ProviderRegisterPage(),
         WaitingApprovePage.routeName: (context) => const WaitingApprovePage(),
         HomePage.routeName: (context) => const HomePage(),
+        CreatePostScreen.routeName: (context) => const CreatePostScreen(),
+
       },
       debugShowCheckedModeBanner: false,
       initialRoute: LoginPage.routeName,

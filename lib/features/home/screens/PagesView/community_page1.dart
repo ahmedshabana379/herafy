@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/features/home/widgets/post_card.dart';
 
-class CommunityPage extends StatelessWidget {
+class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key, this.scrollController});
   final ScrollController? scrollController;
   static const List<Map<String, dynamic>> _mockPosts = [
@@ -112,14 +112,25 @@ class CommunityPage extends StatelessWidget {
   ];
 
   @override
+  State<CommunityPage> createState() => _CommunityPageState();
+}
+
+class _CommunityPageState extends State<CommunityPage>
+    with AutomaticKeepAliveClientMixin {
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // ← مهم
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: ListView.builder(
-        controller: scrollController,
-        itemCount: _mockPosts.length,
+        controller: widget.scrollController,
+        itemCount: CommunityPage._mockPosts.length,
         itemBuilder: (context, index) {
-          final post = _mockPosts[index];
+          final post = CommunityPage._mockPosts[index];
           return PostCard(
             providerName: post["name"],
             providerJob: post["job"],
