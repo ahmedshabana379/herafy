@@ -3,7 +3,7 @@ import 'package:herafy/features/home/widgets/post_card.dart';
 
 class CommunityPage extends StatelessWidget {
   const CommunityPage({super.key, this.scrollController});
-final ScrollController? scrollController;
+  final ScrollController? scrollController;
   static const List<Map<String, dynamic>> _mockPosts = [
     {
       "isServiceOffer": false,

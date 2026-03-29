@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:herafy/core/components/info_card_for_waiting_page.dart';
 import 'package:herafy/core/components/stepper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/auth/screens/login.dart';
 
 class WaitingApprovePage extends StatelessWidget {
   static const String routeName = 'WaitingApprove';
@@ -21,7 +22,7 @@ class WaitingApprovePage extends StatelessWidget {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-
+        leading: BackButton(onPressed: ()=>Navigator.pushNamed(context, LoginPage.routeName),),
         title: const Text(
           "حالة الطلب",
           style: TextStyle(

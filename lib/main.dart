@@ -35,7 +35,7 @@ class HerafyApp extends StatelessWidget {
         HomePage.routeName: (context) => const HomePage(),
       },
       debugShowCheckedModeBanner: false,
-      initialRoute:  ProviderRegisterPage.routeName,
+      initialRoute: LoginPage.routeName,
     );
   }
 }

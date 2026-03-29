@@ -3,7 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 
 class QuickRequestPage extends StatefulWidget {
-  const QuickRequestPage({super.key});
+  const QuickRequestPage({super.key, this.scrollController});
+  final ScrollController? scrollController;
 
   @override
   State<QuickRequestPage> createState() => _QuickRequestPageState();
@@ -61,6 +62,7 @@ class _QuickRequestPageState extends State<QuickRequestPage> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      controller: widget.scrollController,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,7 +128,9 @@ class _QuickRequestPageState extends State<QuickRequestPage> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: isSelected ? color : color.withValues(alpha: 0.15),
+                          color: isSelected
+                              ? color
+                              : color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected ? color : Colors.transparent,
@@ -228,8 +232,9 @@ class _QuickRequestPageState extends State<QuickRequestPage> {
               onPressed: selectedService == null ? null : () {},
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color(AppColors.primaryColor),
-                disabledBackgroundColor:
-                    Color(AppColors.primaryColor).withValues(alpha: 0.4),
+                disabledBackgroundColor: Color(
+                  AppColors.primaryColor,
+                ).withValues(alpha: 0.4),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

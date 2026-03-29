@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/screens/PagesView/community_page1.dart';
+import 'package:herafy/features/home/screens/PagesView/offers_page.dart';
 import 'package:herafy/features/home/screens/PagesView/quick_request_page.dart';
 import 'package:herafy/features/home/widgets/bar_of_tapbar_buttons.dart';
 import 'package:herafy/features/home/widgets/post_type_sheet.dart';
@@ -124,7 +125,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 CommunityPage(scrollController: _scrollController),
                 QuickRequestPage(),
-                Center(child: Text("العروض")),
+                OffersPage(),
                 Center(child: Text("المحادثات")),
               ],
             ),
