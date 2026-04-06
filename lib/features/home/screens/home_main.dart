@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/screens/PagesView/community_page1.dart';
+import 'package:herafy/features/home/screens/PagesView/drawers/client_drawer.dart';
 import 'package:herafy/features/home/screens/PagesView/offers_page.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/pages/provider_dashboard_page.dart';
 import 'package:herafy/features/home/screens/PagesView/quick_request_page.dart';
@@ -87,7 +88,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      drawer: Drawer(),
+      drawer: ClientDrawer(),
       body: Column(
         children: [
           AnimatedContainer(

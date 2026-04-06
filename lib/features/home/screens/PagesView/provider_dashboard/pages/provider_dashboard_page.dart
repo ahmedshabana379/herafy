@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
-import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/presentation/widgets/stat_card.dart';
-import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/widgets/request_card.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/stat_card.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/request_card.dart';
 
 class ProviderDashboardPage extends StatelessWidget {
   const ProviderDashboardPage({super.key});
