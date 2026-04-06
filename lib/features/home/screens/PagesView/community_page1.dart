@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:herafy/features/home/widgets/post_card.dart';
+import 'package:herafy/features/screens/widgets/post_card.dart';
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key, this.scrollController});

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
-import 'package:herafy/features/home/screens/edit_account_page.dart';
+import 'package:herafy/features/screens/edit_account_page.dart';
 
 class ClientDrawer extends StatelessWidget {
   final int receivedOffersCount;
