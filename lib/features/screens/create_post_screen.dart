@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CreatePostScreen extends StatefulWidget {
@@ -39,12 +42,32 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
 
     if (images.isNotEmpty) {
-      setState(() {
-        // بتضيف الصور الجديدة على القديمة مش بتبدلها
-        _selectedImages.addAll(
-          images.map((xFile) => File(xFile.path)).toList(),
+      final availableSlots = 3 - _selectedImages.length;
+      if (availableSlots <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("الحد الأقصى 3 صور فقط"),
+            backgroundColor: Colors.redAccent,
+          ),
         );
+        return;
+      }
+
+      final pickedFiles = images.map((xFile) => File(xFile.path)).toList();
+      final filesToAdd = pickedFiles.take(availableSlots).toList();
+
+      setState(() {
+        _selectedImages.addAll(filesToAdd);
       });
+
+      if (pickedFiles.length > filesToAdd.length) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("تم إضافة أول 3 صور فقط"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 
@@ -54,6 +77,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SocialCubit? socialCubit;
+    try {
+      socialCubit = BlocProvider.of<SocialCubit>(context);
+    } catch (_) {
+      socialCubit = null;
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -74,25 +104,81 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
         ),
         actions: [
           // زرار النشر
-          Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8),
-            child: ElevatedButton(
-              onPressed: _descController.text.isEmpty && _selectedImages.isEmpty
-                  ? null
-                  : () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(AppColors.primaryColor),
-                disabledBackgroundColor:
-                    Color(AppColors.primaryColor).withValues(alpha: 0.4),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+          BlocConsumer<SocialCubit, SocialState>(
+            listener: (context, state) {
+              if (state is CreatePostSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("تم نشر المنشور بنجاح"),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                Navigator.pop(context);
+              } else if (state is CreatePostError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.error),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              final isLoading = state is CreatePostLoading;
+              return Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8),
+                child: ElevatedButton(
+                  onPressed:
+                      isLoading ||
+                          (_descController.text.isEmpty &&
+                              _selectedImages.isEmpty)
+                      ? null
+                      : () {
+                          if (socialCubit == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Post service is not initialized yet",
+                                ),
+                                backgroundColor: Colors.redAccent,
+                              ),
+                            );
+                            return;
+                          }
+
+                          socialCubit.createPost(
+                            title: postType == "service"
+                                ? "عرض خدمة"
+                                : "مشاركة عامة",
+                            description: _descController.text,
+                            images: _selectedImages,
+                          );
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(AppColors.primaryColor),
+                    disabledBackgroundColor: Color(
+                      AppColors.primaryColor,
+                    ).withValues(alpha: 0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          "نشر",
+                          style: TextStyle(color: Colors.white),
+                        ),
                 ),
-              ),
-              child: const Text(
-                "نشر",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -104,8 +190,10 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             // نوع البوست badge
             if (postType != null)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: postType == "service"
                       ? Color(AppColors.primaryColor).withValues(alpha: 0.1)
@@ -151,11 +239,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                 hintText: postType == "service"
                     ? "اوصف الخدمة اللي بتقدمها..."
                     : "شارك تجربتك أو شغلك مع المجتمع...",
-                hintStyle:
-                    TextStyle(color: Colors.grey.shade400, fontSize: 15),
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
                 border: InputBorder.none,
-                counterStyle:
-                    TextStyle(color: Color(AppColors.secondaryColor)),
+                counterStyle: TextStyle(color: Color(AppColors.secondaryColor)),
               ),
               style: const TextStyle(fontSize: 15, height: 1.5),
             ),
