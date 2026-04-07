@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/auth/cubits/auth_cubit.dart';
+import 'package:herafy/features/auth/cubits/auth_state.dart';
+import 'package:herafy/features/auth/screens/login.dart';
 import 'package:herafy/features/screens/edit_account_page.dart';
 
 class ClientDrawer extends StatelessWidget {
@@ -11,12 +15,10 @@ class ClientDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
-      width:
-          MediaQuery.of(context).size.width *
-          0.8, // الدرور ياخد 80% من الشاشة عشان يبان شيك
+      width: MediaQuery.of(context).size.width * 0.8,
       child: Column(
         children: [
-          // Header المطور
+          // Profile Header connected to real data
           _buildProfileHeader(context),
 
           Expanded(
@@ -27,7 +29,7 @@ class ClientDrawer extends StatelessWidget {
                   icon: Icons.edit_note_rounded,
                   title: "تعديل الحساب",
                   onTap: () {
-                    Navigator.pop(context); // قفل الدرور الأول
+                    Navigator.pop(context);
                     Navigator.pushNamed(context, EditAccountPage.routeName);
                   },
                 ),
@@ -52,12 +54,9 @@ class ClientDrawer extends StatelessWidget {
                   icon: Icons.palette_outlined,
                   title: "مظهر التطبيق",
                   trailing: Switch(
-                    value: false, // تربطه بالـ Theme Provider
+                    value: false,
                     onChanged: (val) {},
-                    activeColor: Color(AppColors.primaryColor),
-                    activeTrackColor: Color(
-                      AppColors.primaryColor,
-                    ).withOpacity(0.3),
+                    activeThumbColor: Color(AppColors.primaryColor),
                   ),
                   onTap: () {},
                 ),
@@ -65,8 +64,8 @@ class ClientDrawer extends StatelessWidget {
             ),
           ),
 
-          // تسجيل الخروج في الأسفل بشكل أنيق
-          _buildLogoutButton(),
+          // Logout button with BlocListener
+          _buildLogoutSection(context),
           const SizedBox(height: 24),
         ],
       ),
@@ -74,58 +73,154 @@ class ClientDrawer extends StatelessWidget {
   }
 
   Widget _buildProfileHeader(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 70, bottom: 25, right: 24, left: 24),
-      decoration: BoxDecoration(
-        // Gradient خفيف بألوان الهوية
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            Color(AppColors.primaryColor),
-            Color(AppColors.primaryColor).withOpacity(0.85),
-          ],
+    return BlocBuilder<AuthCubit, AuthState>(
+      builder: (context, state) {
+        final user = context.read<AuthCubit>().currentUser;
+        final displayName = user?.fullName ?? "المستخدم";
+        final displayEmail = user?.email ?? "";
+        final isProvider = user?.isProvider ?? false;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(
+            top: 70,
+            bottom: 25,
+            right: 24,
+            left: 24,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [
+                Color(AppColors.primaryColor),
+                Color(AppColors.primaryColor).withOpacity(0.85),
+              ],
+            ),
+          ),
+          child: Column(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 36,
+                  backgroundColor: const Color(0xFFF3F3F7),
+                  backgroundImage: user?.pictureUrl != null
+                      ? NetworkImage(user!.pictureUrl!)
+                      : null,
+                  child: user?.pictureUrl == null
+                      ? const Icon(
+                          Icons.person,
+                          size: 45,
+                          color: Color(0xFF2b2854),
+                        )
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                displayName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                displayEmail,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isProvider ? "حرفي" : "عميل مميز",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLogoutSection(BuildContext context) {
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state is LogoutSuccess) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            LoginPage.routeName,
+            (route) => false,
+          );
+        } else if (state is LogoutError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: BlocBuilder<AuthCubit, AuthState>(
+          builder: (context, state) {
+            return TextButton.icon(
+              onPressed: state is LogoutLoading
+                  ? null
+                  : () {
+                      context.read<AuthCubit>().logout();
+                    },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                backgroundColor: Colors.red.withOpacity(0.05),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              icon: state is LogoutLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.redAccent,
+                      ),
+                    )
+                  : const Icon(Icons.logout_rounded, size: 20),
+              label: Text(
+                state is LogoutLoading ? "جاري الخروج..." : "تسجيل الخروج",
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          },
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(AppColors.primaryColor).withOpacity(0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const CircleAvatar(
-            radius: 40,
-            backgroundColor: Colors.white,
-            child: CircleAvatar(
-              radius: 36,
-              backgroundColor: Color(0xFFF3F3F7),
-              child: Icon(Icons.person, size: 45, color: Color(0xFF2b2854)),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "أحمد شبانة",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "عميل مميز",
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -178,29 +273,6 @@ class ClientDrawer extends StatelessWidget {
           color: Colors.white,
           fontSize: 10,
           fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-      child: TextButton.icon(
-        onPressed: () {},
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.redAccent,
-          backgroundColor: Colors.red.withOpacity(0.05),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          minimumSize: const Size(double.infinity, 50),
-        ),
-        icon: const Icon(Icons.logout_rounded, size: 20),
-        label: const Text(
-          "تسجيل الخروج",
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
         ),
       ),
     );

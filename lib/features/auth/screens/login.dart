@@ -27,7 +27,6 @@ class _LoginPageState extends State<LoginPage> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _emailController.text = prefs.getString('saved_email') ?? '';
-      _passwordController.text = prefs.getString('saved_password') ?? '';
       rememberMe = prefs.getBool('remember_me') ?? false;
     });
   }
@@ -36,10 +35,10 @@ class _LoginPageState extends State<LoginPage> {
     final prefs = await SharedPreferences.getInstance();
     if (rememberMe) {
       await prefs.setString('saved_email', _emailController.text);
-      await prefs.setString('saved_password', _passwordController.text);
       await prefs.setBool('remember_me', true);
     } else {
-      await prefs.clear();
+      await prefs.remove('saved_email');
+      await prefs.remove('remember_me');
     }
   }
 
@@ -197,14 +196,14 @@ class _LoginPageState extends State<LoginPage> {
                     listener: (context, state) {
                       if (state is LoginSuccess) {
                         saveUserData();
-                        Navigator.pushNamed(
+                        Navigator.pushReplacementNamed(
                           context,
                           HomePage.routeName,
                         );
                       } else if (state is LoginError) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(state.message),
+                            content: Center(child: Text(state.message)),
                             backgroundColor: Colors.redAccent,
                           ),
                         );

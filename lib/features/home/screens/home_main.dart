@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/auth/models/user_model.dart';
+import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/home/screens/PagesView/community_page1.dart';
 import 'package:herafy/features/home/screens/PagesView/drawers/client_drawer.dart';
 import 'package:herafy/features/home/screens/PagesView/offers_page.dart';
@@ -21,10 +24,14 @@ class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
   int _selectedIndex = 0;
   bool _isBarVisible = true;
+  UserModel? _user;
+  bool _isProviderProfileCompleted = false;
+  bool _isProviderPendingCompletion = false;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _scrollController.addListener(() {
       if (_scrollController.position.userScrollDirection.name == 'reverse') {
         if (_isBarVisible) setState(() => _isBarVisible = false);
@@ -32,6 +39,29 @@ class _HomePageState extends State<HomePage> {
         if (!_isBarVisible) setState(() => _isBarVisible = true);
       }
     });
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await CacheHelper.getUserData();
+      final profileCompleted = await CacheHelper.isProviderProfileCompleted();
+      final providerPendingCompletion =
+          await CacheHelper.isProviderPendingCompletion();
+      final providerStep1Draft = await CacheHelper.getProviderStep1Data();
+      final hasMatchingProviderDraft =
+          providerStep1Draft != null &&
+          userData?.email != null &&
+          providerStep1Draft['email']?.toString().toLowerCase() ==
+              userData!.email!.toLowerCase();
+      setState(() {
+        _user = userData;
+        _isProviderProfileCompleted = profileCompleted;
+        _isProviderPendingCompletion =
+            providerPendingCompletion || hasMatchingProviderDraft;
+      });
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
   @override
@@ -43,6 +73,18 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isProvider = _user?.isProvider == true;
+    final isProfileComplete =
+        (_user?.isProfileComplete ?? false) || _isProviderProfileCompleted;
+    final isProviderApproved = _user?.isAuthenticated == true;
+    final showProviderDashboard =
+        isProvider && isProfileComplete && isProviderApproved;
+    final showCompleteProfileCta =
+        (isProvider && !isProfileComplete) || _isProviderPendingCompletion;
+    final showWaitingApprovalCta =
+        isProvider && isProfileComplete && !isProviderApproved;
+
+    // الهوم العادي للعميل
     return Scaffold(
       floatingActionButton: _selectedIndex == 0
           ? AnimatedScale(
@@ -91,6 +133,52 @@ class _HomePageState extends State<HomePage> {
       drawer: ClientDrawer(),
       body: Column(
         children: [
+          if (showCompleteProfileCta || showWaitingApprovalCta)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF6F4FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE4DCFF)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      showCompleteProfileCta
+                          ? Icons.info_outline
+                          : Icons.access_time_filled_rounded,
+                      color: Color(AppColors.primaryColor),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        showCompleteProfileCta
+                            ? "بيانات حسابك كمقدم خدمة غير مكتملة"
+                            : "تم إرسال بياناتك وهي الآن قيد المراجعة",
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    if (showCompleteProfileCta)
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProviderRegisterPage(
+                                startFromSecondStep: true,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text("إكمال"),
+                      ),
+                  ],
+                ),
+              ),
+            ),
           AnimatedContainer(
             duration: Duration(milliseconds: 300),
             height: _isBarVisible ? 80 : 0,
@@ -128,7 +216,17 @@ class _HomePageState extends State<HomePage> {
                 CommunityPage(scrollController: _scrollController),
                 QuickRequestPage(),
                 OffersPage(),
-                ProviderDashboardPage(),
+                showProviderDashboard
+                    ? ProviderDashboardPage()
+                    : const Center(
+                        child: Text(
+                          "الخدمة غير متاحة الآن",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
               ],
             ),
           ),

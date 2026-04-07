@@ -8,22 +8,28 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/features/auth/models/gov_and_regions_model.dart';
 import 'package:herafy/features/auth/models/services_model.dart';
 import 'package:herafy/features/auth/models/user_model.dart';
+import 'dart:io';
 
 class AuthCubit extends Cubit<AuthState> {
   AuthCubit() : super(AuthInitial());
-// services
-List<ServiceModel> services = [];
-// governates nad regions
+
+  // Current user data
+  UserModel? _currentUser;
+  UserModel? get currentUser => _currentUser;
+
+  // services
+  List<ServiceModel> services = [];
+  // governates nad regions
   List<GovernorateModel> governorates = [];
   List<RegionModel> filteredRegions = [];
   // provider data
   String? providerName;
   String? providerEmail;
   String? providerPassword;
-String? providerCategory;
-String? providerSubCategory;
-String? providerGovernateId;
-String? providerRegionId;
+  String? providerCategory;
+  String? providerSubCategory;
+  String? providerGovernateId;
+  String? providerRegionId;
   String? provideraddress;
   String? providerRange;
   String? idCardImagePath;
@@ -33,10 +39,11 @@ String? providerRegionId;
   void selectRole(UserRole role) {
     if (selectedRole == role) {
       selectedRole = null; // Deselect if the same role is tapped again
+      emit(AuthInitial());
     } else {
       selectedRole = role;
+      emit(SelectRoleState(selectedRole!));
     }
-    emit(SelectRoleState(selectedRole!));
   }
 
   //  buttons logic
@@ -52,6 +59,18 @@ String? providerRegionId;
     }
   }
 
+  // --- Load current user data from cache ---
+  Future<void> loadUserData() async {
+    try {
+      final userData = await CacheHelper.getUserData();
+      if (userData != null && userData.accessToken != null) {
+        _currentUser = userData;
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
   // login logic
   Future<void> login({required String email, required String password}) async {
     emit(LoginLoading());
@@ -60,53 +79,176 @@ String? providerRegionId;
         endPoint: AppEndPoints.login,
         data: {"email": email, "password": password},
       );
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == 200) {
         UserModel user = UserModel.fromJson(response.data);
+        _currentUser = user;
         if (user.accessToken != null) {
           await CacheHelper.saveToken(user.accessToken!);
+          // حفظ بيانات المستخدم كاملة
+          await CacheHelper.saveUserData(user);
         }
         emit(LoginSuccess());
-      } else {
-        emit(LoginError("فشل تسجيل الدخول: تأكد من البيانات"));
       }
     } on DioException catch (e) {
-      String message = e.response?.data['message'] ?? "حدث خطأ في الاتصال";
-      emit(LoginError(message));
-    } catch (e) {
-      emit(LoginError("حدث خطأ غير متوقع: ${e.toString()}"));
+      emit(LoginError(e.response?.data['message'] ?? "خطأ في تسجيل الدخول"));
     }
   }
-  // registration logic for client
 
+  // registration logic for client and provider (same method for both)
   Future<void> register({
-    required String name,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
+    required bool isProvider,
   }) async {
     emit(RegisterLoading());
     try {
-      await Future.delayed(Duration(seconds: 5));
-      emit(RegisterSuccess());
-    } catch (e) {
-      emit(RegisterError(e.toString()));
+      final response = await DioHelper.postRequest(
+        endPoint: AppEndPoints.register,
+        data: {
+          "firstName": firstName,
+          "lastName": lastName,
+          "email": email,
+          "password": password,
+          "isProvider": isProvider,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // For provider we only save step-1 draft, then user logs in normally.
+        if (isProvider) {
+          await CacheHelper.saveProviderStep1Data(
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+          );
+          await CacheHelper.saveProviderProgress(0.5);
+        }
+        emit(RegisterSuccess(isProvider));
+      }
+    } on DioException catch (e) {
+      String errorMessage = "فشل التسجيل";
+      final data = e.response?.data;
+      if (data is Map) {
+        errorMessage = data['message']?.toString() ?? errorMessage;
+      } else if (data is String && data.isNotEmpty) {
+        errorMessage = data;
+      }
+      emit(RegisterError(errorMessage));
     }
   }
 
-  // registration logic for provider
-  Future<void> providerRegister() async {
+  // --- 3. Change Password ---
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    emit(ChangePasswordLoading());
+    try {
+      final response = await DioHelper.postRequest(
+        endPoint: AppEndPoints.changePassword,
+        data: {"oldPassword": oldPassword, "newPassword": newPassword},
+      );
+
+      if (response.statusCode == 200) {
+        emit(ChangePasswordSuccess());
+      }
+    } on DioException catch (e) {
+      String errorMessage =
+          e.response?.data['message'] ?? "عفواً، كلمة المرور القديمة غير صحيحة";
+      emit(ChangePasswordError(errorMessage));
+    } catch (e) {
+      emit(ChangePasswordError("حدث خطأ غير متوقع"));
+    }
+  }
+
+  // --- 4. Logout ---
+  Future<void> logout() async {
+    emit(LogoutLoading());
+    try {
+      await DioHelper.postRequest(endPoint: AppEndPoints.logout, data: {});
+    } catch (_) {
+    } finally {
+      _currentUser = null;
+      await CacheHelper.deleteToken();
+      await CacheHelper.clearAll();
+      emit(LogoutSuccess());
+    }
+  }
+
+  // --- 6. Provider Registration - Step 2 (Complete Provider Data) ---
+  Future<void> completeProviderRegistration({
+    required String category,
+    required String? subCategory,
+    required String governorateId,
+    required String regionId,
+    required String workRange,
+    required String address,
+    required File idCardImage,
+    required File profileImage,
+    required File criminalRecordImage,
+  }) async {
     emit(ProviderRegisterLoading());
     try {
-      await Future.delayed(Duration(seconds: 5));
-      emit(ProviderRegisterSuccess());
-    } catch (e) {
-      emit(ProviderRegisterError(e.toString()));
+      // تحضير FormData لإرسال الملف
+      FormData formData = FormData.fromMap({
+        "category": category,
+        "subCategory": subCategory ?? "",
+        "governorateId": governorateId,
+        "regionId": regionId,
+        "workRange": workRange,
+        "address": address,
+        "idCardImage": await MultipartFile.fromFile(
+          idCardImage.path,
+          filename: 'id_card_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+        "profileImage": await MultipartFile.fromFile(
+          profileImage.path,
+          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+        "criminalRecordImage": await MultipartFile.fromFile(
+          criminalRecordImage.path,
+          filename: 'criminal_record_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+      });
+
+      final response = await DioHelper.postRequest(
+        endPoint: AppEndPoints.completeProviderProfile,
+        data: formData,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // حفظ البيانات المكتملة
+        providerCategory = category;
+        providerSubCategory = subCategory;
+        providerGovernateId = governorateId;
+        providerRegionId = regionId;
+        providerRange = workRange;
+        provideraddress = address;
+        idCardImagePath = idCardImage.path;
+
+        // حذف البيانات المحفوظة محلياً بعد التسجيل الناجح
+        await CacheHelper.saveProviderProgress(0.0);
+        await CacheHelper.clearProviderStep1Data();
+
+        // وضع علامة على أن البروفايدر أكمل البيانات
+        await CacheHelper.markProviderProfileCompleted();
+
+        emit(ProviderRegisterSuccess());
+      }
+    } on DioException catch (e) {
+      emit(
+        ProviderRegisterError(
+          e.response?.data['message'] ?? "فشل إكمال بيانات الحرفي",
+        ),
+      );
     }
   }
 
-  // governates and regions fetch logic
+  // --- 7. Fetching Data (المحافظات والخدمات) ---
   Future<void> getGovernatesData() async {
+    emit(GetRegionsLoading());
     try {
-      emit(GetRegionsLoading());
       final response = await DioHelper.getRequest(
         endPoint: AppEndPoints.regionsAndGavernates,
       );
@@ -120,13 +262,11 @@ String? providerRegionId;
       emit(GetRegionsError(e.toString()));
     }
   }
-
   // 2. ميثود اختيار المحافظة (بناديها لما الدروب داون تتغير)
+
   void onGovernateSelectedState(GovernorateModel selectedGov) {
-    if (selectedGov != null) {
-      filteredRegions = selectedGov.regions ?? [];
-      emit(GovernorateSelectedState());
-    }
+    filteredRegions = selectedGov.regions ?? [];
+    emit(GovernorateSelectedState());
   }
 
   // fetch services logic
@@ -137,10 +277,10 @@ String? providerRegionId;
       final response = await DioHelper.getRequest(
         endPoint: AppEndPoints.services,
       );
-if (response.statusCode == 200) {
-  services = (response.data as List)
-      .map((s) => ServiceModel.fromJson(s))
-      .toList();
+      if (response.statusCode == 200) {
+        services = (response.data as List)
+            .map((s) => ServiceModel.fromJson(s))
+            .toList();
         emit(GetServicesSuccess());
       }
     } catch (e) {

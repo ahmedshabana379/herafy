@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/widgets/offer_card.dart';
 
 class OffersPage extends StatelessWidget {

@@ -3,26 +3,32 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
 import 'package:herafy/core/components/custom_text_field.dart';
 import 'package:herafy/core/components/text-field-label.dart';
+import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
+import 'package:herafy/features/auth/cubits/auth_state.dart';
+import 'package:herafy/features/auth/screens/login.dart';
 
 class FirstRegisterationStep extends StatefulWidget {
   const FirstRegisterationStep({
     super.key,
     required GlobalKey<FormState> formKey,
-    required TextEditingController nameController,
+    required TextEditingController firstNameController,
+    required TextEditingController lastNameController,
     required TextEditingController emailController,
     required TextEditingController passwordController,
     required TextEditingController confirmPasswordController,
     required this.onNext,
     required this.onProgressChanged,
   }) : _formKey = formKey,
-       _nameController = nameController,
+       _firstNameController = firstNameController,
+       _lastNameController = lastNameController,
        _emailController = emailController,
        _passwordController = passwordController,
        _confirmPasswordController = confirmPasswordController;
 
   final GlobalKey<FormState> _formKey;
-  final TextEditingController _nameController;
+  final TextEditingController _firstNameController;
+  final TextEditingController _lastNameController;
   final TextEditingController _emailController;
   final TextEditingController _passwordController;
   final TextEditingController _confirmPasswordController;
@@ -37,14 +43,15 @@ class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
   void _calculateProgress() {
     int filled = 0;
     const int total = 10; // إجمالي كل الـ fields في الصفحتين
-
-    if (widget._nameController.text.trim().length >= 3) filled++;
+    if (widget._firstNameController.text.trim().isNotEmpty) filled++;
+    if (widget._lastNameController.text.trim().isNotEmpty) filled++;
     if (widget._emailController.text.trim().isNotEmpty) filled++;
     if (widget._passwordController.text.length >= 6) filled++;
     if (widget._confirmPasswordController.text ==
             widget._passwordController.text &&
-        widget._confirmPasswordController.text.isNotEmpty)
+        widget._confirmPasswordController.text.isNotEmpty) {
       filled++;
+    }
 
     widget.onProgressChanged(filled / total);
   }
@@ -52,7 +59,8 @@ class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
   @override
   void initState() {
     super.initState();
-    widget._nameController.addListener(_calculateProgress);
+    widget._firstNameController.addListener(_calculateProgress);
+    widget._lastNameController.addListener(_calculateProgress);
     widget._emailController.addListener(_calculateProgress);
     widget._passwordController.addListener(_calculateProgress);
     widget._confirmPasswordController.addListener(_calculateProgress);
@@ -67,19 +75,40 @@ class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextFieldLabel(title: "الاسم الكامل"),
-            CustomTextField(
-              isPassword: false,
-              hintText: "أدخل إسمك بالكامل",
-              icon: Icons.person_outline,
-              controller: widget._nameController,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'الرجاء إدخال الاسم الكامل';
-                } else if (value.length < 3) {
-                  return 'الاسم الكامل يجب أن يكون على الأقل 3 أحرف';
-                }
-                return null;
-              },
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const TextFieldLabel(title: " إسم العائلة"),
+                      CustomTextField(
+                        isPassword: false,
+                        hintText: "مثلاً: محمد",
+                        icon: Icons.person_outline,
+                        controller: widget._firstNameController,
+                        validator: (value) => value!.isEmpty ? 'مطلوب' : null,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const TextFieldLabel(title: "الإسم الأول"),
+                      CustomTextField(
+                        isPassword: false,
+                        hintText: "مثلاً: أحمد",
+                        icon: Icons.people_outline,
+                        controller: widget._lastNameController,
+                        validator: (value) => value!.isEmpty ? 'مطلوب' : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
             TextFieldLabel(title: "البريد الإلكتروني"),
@@ -134,19 +163,44 @@ class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
               icon: Icons.lock_outline,
             ),
             const SizedBox(height: 30),
-            AppButton(
-              isButtonEnabled: true,
-              text: "متابعة",
-              isLoading: false,
-              onPressed: () {
-                if (widget._formKey.currentState!.validate()) {
-                  final cubit = context.read<AuthCubit>();
-                  cubit.providerName = widget._nameController.text.trim();
-                  cubit.providerEmail = widget._emailController.text.trim();
-                  cubit.providerPassword = widget._passwordController.text
-                      .trim();
-
-                  widget.onNext();
+            BlocConsumer<AuthCubit, AuthState>(
+              builder: (context, state) {
+                final isLoading = state is RegisterLoading;
+                return AppButton(
+                  isButtonEnabled: !isLoading,
+                  text: "إنشاء الحساب",
+                  isLoading: isLoading,
+                  buttonText: "جاري إنشاء الحساب...",
+                  onPressed: () {
+                    if (widget._formKey.currentState!.validate()) {
+                      final cubit = context.read<AuthCubit>();
+                      cubit.register(
+                        firstName: widget._firstNameController.text.trim(),
+                        lastName: widget._lastNameController.text.trim(),
+                        email: widget._emailController.text.trim(),
+                        password: widget._passwordController.text.trim(),
+                        isProvider: true,
+                      );
+                    }
+                  },
+                );
+              },
+              listener: (context, state) {
+                if (state is RegisterSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Center(child: Text('تم إنشاء الحساب بنجاح!')),
+                      backgroundColor: Color(AppColors.primaryColor),
+                    ),
+                  );
+                  Navigator.pushReplacementNamed(context, LoginPage.routeName);
+                } else if (state is RegisterError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Center(child: Text(state.message)),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
               },
             ),

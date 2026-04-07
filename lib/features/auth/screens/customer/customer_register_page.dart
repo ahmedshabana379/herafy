@@ -16,7 +16,9 @@ class CustomerRegisterPage extends StatefulWidget {
 }
 
 class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
@@ -25,7 +27,8 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -103,19 +106,42 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                 child: Column(
                   children: [
                     TextFieldLabel(title: "الاسم الكامل"),
-                    CustomTextField(
-                      isPassword: false,
-                      hintText: "أدخل إسمك بالكامل",
-                      icon: Icons.person_outline,
-                      controller: _nameController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'الرجاء إدخال الاسم الكامل';
-                        } else if (value.length < 3) {
-                          return 'الاسم الكامل يجب أن يكون على الأقل 3 أحرف';
-                        }
-                        return null;
-                      },
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const TextFieldLabel(title: " إسم العائلة"),
+                              CustomTextField(
+                                isPassword: false,
+                                hintText: "مثلاً: محمد",
+                                icon: Icons.person_outline,
+                                controller: _firstNameController,
+                                validator: (value) =>
+                                    value!.isEmpty ? 'مطلوب' : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const TextFieldLabel(title: "الإسم الأول"),
+                              CustomTextField(
+                                isPassword: false,
+                                hintText: "مثلاً: أحمد",
+                                icon: Icons.people_outline,
+                                controller: _lastNameController,
+                                validator: (value) =>
+                                    value!.isEmpty ? 'مطلوب' : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                     TextFieldLabel(title: "البريد الإلكتروني"),
@@ -176,12 +202,17 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                         return AppButton(
                           text: "إنشاء الحساب",
                           isButtonEnabled: !isLoading,
+                          buttonText: isLoading
+                              ? "جاري إنشاء الحساب..."
+                              : "إنشاء الحساب",
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
                               context.read<AuthCubit>().register(
-                                name: _nameController.text.trim(),
+                                firstName: _firstNameController.text.trim(),
+                                lastName: _lastNameController.text.trim(),
                                 email: _emailController.text.trim(),
                                 password: _passwordController.text.trim(),
+                                isProvider: false,
                               );
                             }
                           },
@@ -198,11 +229,14 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                               backgroundColor: Color(AppColors.primaryColor),
                             ),
                           );
-                          Navigator.pushNamed(context, LoginPage.routeName);
+                          Navigator.pushReplacementNamed(
+                            context,
+                            LoginPage.routeName,
+                          );
                         } else if (state is RegisterError) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(state.message),
+                              content: Center(child: Text(state.message)),
                               backgroundColor: Colors.red,
                             ),
                           );

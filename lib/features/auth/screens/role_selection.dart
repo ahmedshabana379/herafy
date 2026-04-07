@@ -39,7 +39,6 @@ class RoleSelectionPage extends StatelessWidget {
       ),
       body: BlocConsumer<AuthCubit, AuthState>(
         builder: (BuildContext context, state) {
-          final selected = context.read<AuthCubit>().selectedRole;
           UserRole? selectedRole = (state is SelectRoleState)
               ? state.selectedRole
               : null;
@@ -92,9 +91,9 @@ class RoleSelectionPage extends StatelessWidget {
                   SizedBox(height: 40),
                   AppButton(
                     isButtonEnabled: isButtonEnabled,
-                    onPressed: () => selected == null
-                        ? null
-                        : context.read<AuthCubit>().onContinue(),
+                    onPressed: isButtonEnabled
+                        ? () => context.read<AuthCubit>().onContinue()
+                        : null,
                     text: 'متابعة',
                   ),
                   Row(

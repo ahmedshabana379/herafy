@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/screens/customer/customer_register_page.dart';
@@ -11,35 +12,101 @@ import 'package:herafy/features/screens/create_post_screen.dart';
 import 'package:herafy/features/screens/edit_account_page.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   DioHelper.initDio();
-  runApp(
-    BlocProvider(create: (context) => AuthCubit(), child: const HerafyApp()),
-  );
+  runApp(const HerafyApp());
 }
 
-class HerafyApp extends StatelessWidget {
+class HerafyApp extends StatefulWidget {
   const HerafyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<HerafyApp> createState() => _HerafyAppState();
+}
+
+class _HerafyAppState extends State<HerafyApp> {
+  late Future<String> _initialRouteFuture;
+  late AuthCubit _authCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _authCubit = AuthCubit();
+    _initialRouteFuture = _determineInitialRoute();
+  }
+
+  Future<String> _determineInitialRoute() async {
+    try {
+      // Load user data
+      await _authCubit.loadUserData();
+
+      final token = await CacheHelper.getToken();
+      if (token != null && token.isNotEmpty) {
+        return HomePage.routeName;
+      }
+    } catch (e) {
+      print('Error checking token: $e');
+    }
+    return LoginPage.routeName;
+  }
+
+  @override
+  void dispose() {
+    _authCubit.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      routes: {
-        RoleSelectionPage.routeName: (context) => const RoleSelectionPage(),
-        LoginPage.routeName: (context) => const LoginPage(),
-        CustomerRegisterPage.routeName: (context) =>
-            const CustomerRegisterPage(),
-        ProviderRegisterPage.routeName: (context) =>
-            const ProviderRegisterPage(),
-        WaitingApprovePage.routeName: (context) => const WaitingApprovePage(),
-        HomePage.routeName: (context) => const HomePage(),
-        EditAccountPage.routeName: (context) => const EditAccountPage(),
-        CreatePostScreen.routeName: (context) => const CreatePostScreen(),
+    return FutureBuilder<String>(
+      future: _initialRouteFuture,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    const Text('جاري التحميل...'),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return BlocProvider<AuthCubit>.value(
+          value: _authCubit,
+          child: MaterialApp(
+            routes: {
+              RoleSelectionPage.routeName: (context) =>
+                  const RoleSelectionPage(),
+              LoginPage.routeName: (context) => const LoginPage(),
+              CustomerRegisterPage.routeName: (context) =>
+                  const CustomerRegisterPage(),
+              ProviderRegisterPage.routeName: (context) =>
+                  const ProviderRegisterPage(),
+              WaitingApprovePage.routeName: (context) =>
+                  const WaitingApprovePage(),
+              HomePage.routeName: (context) => const HomePage(),
+              EditAccountPage.routeName: (context) => const EditAccountPage(),
+              CreatePostScreen.routeName: (context) => const CreatePostScreen(),
+            },
+            debugShowCheckedModeBanner: false,
+            initialRoute: snapshot.data ?? LoginPage.routeName,
+          ),
+        );
       },
-      debugShowCheckedModeBanner: false,
-      initialRoute: HomePage.routeName,
     );
   }
 }
+
+
+// role != Provider -> Client UI عادي.
+// role == Provider && !isProfileComplete -> Client UI + CTA إكمال البيانات.
+// role == Provider && isProfileComplete && !isAuthenticated -> Client UI + حالة انتظار.
+// role == Provider && isProfileComplete && isAuthenticated -> Provider UI كامل.

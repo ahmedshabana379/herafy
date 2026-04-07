@@ -4,5 +4,7 @@ class AppEndPoints {
   static const register = "Account/register";
   static const regionsAndGavernates = "Governorate/GovernorateWithRegions";
   static const services = "Services/get-services";
-  
+  static const String logout = 'Account/logout';
+  static const String changePassword = 'Account/change-password';
+  static const String completeProviderProfile = 'Provider/complete-profile';
 }

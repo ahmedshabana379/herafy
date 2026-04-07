@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 
 class StatCard extends StatelessWidget {
-  const StatCard({
+  const StatCard({super.key, 
     required this.title,
     required this.value,
     required this.icon,

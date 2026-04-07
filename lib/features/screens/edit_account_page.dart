@@ -1,8 +1,15 @@
 import 'dart:io'; // مهم عشان ملفات الصور
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/components/app_button.dart';
+import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:image_picker/image_picker.dart'; // تأكد من وجودها في pubspec
 import 'package:herafy/core/components/custom_text_field.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/auth/cubits/auth_cubit.dart';
+import 'package:herafy/features/auth/cubits/auth_state.dart';
+import 'package:herafy/features/auth/models/user_model.dart';
+import 'package:herafy/core/components/text-field-label.dart';
 
 class EditAccountPage extends StatefulWidget {
   const EditAccountPage({super.key});
@@ -21,6 +28,29 @@ class _EditAccountPageState extends State<EditAccountPage> {
 
   File? _imageFile; // تغيير من String لـ File
   final ImagePicker _picker = ImagePicker();
+  UserModel? _user;
+  bool _isLoadingUser = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final userData = await CacheHelper.getUserData();
+      setState(() {
+        _user = userData;
+        _isLoadingUser = false;
+      });
+    } catch (e) {
+      print('Error loading user data: $e');
+      setState(() {
+        _isLoadingUser = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -44,14 +74,11 @@ class _EditAccountPageState extends State<EditAccountPage> {
     }
   }
 
-  void _saveProfile() {
+  void _changePassword() {
     if (_formKey.currentState?.validate() ?? false) {
-      // هنا هتربط الـ API لاحقاً
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('تم حفظ التغييرات بنجاح'),
-          backgroundColor: Color(AppColors.primaryColor),
-        ),
+      context.read<AuthCubit>().changePassword(
+        oldPassword: _oldPasswordController.text,
+        newPassword: _newPasswordController.text,
       );
     }
   }
@@ -70,17 +97,19 @@ class _EditAccountPageState extends State<EditAccountPage> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeaderSection(),
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: _buildPasswordForm(),
+      body: _isLoadingUser
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  _buildHeaderSection(),
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: _buildPasswordForm(),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -110,8 +139,11 @@ class _EditAccountPageState extends State<EditAccountPage> {
                     backgroundColor: Color(AppColors.cardsColor),
                     backgroundImage: _imageFile != null
                         ? FileImage(_imageFile!)
-                        : null,
-                    child: _imageFile == null
+                        : (_user?.pictureUrl != null
+                                  ? NetworkImage(_user!.pictureUrl!)
+                                  : null)
+                              as ImageProvider?,
+                    child: _imageFile == null && _user?.pictureUrl == null
                         ? Icon(
                             Icons.person_outline,
                             size: 50,
@@ -136,12 +168,20 @@ class _EditAccountPageState extends State<EditAccountPage> {
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'أحمد شبانة',
-            style: TextStyle(
+          Text(
+            _user?.fullName ?? 'المستخدم',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _user?.email ?? '',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 14,
             ),
           ),
         ],
@@ -163,69 +203,93 @@ class _EditAccountPageState extends State<EditAccountPage> {
           ),
         ],
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.security,
-                  color: Color(AppColors.primaryColor),
-                  size: 20,
+      child: BlocListener<AuthCubit, AuthState>(
+        listener: (context, state) {
+          if (state is ChangePasswordSuccess) {
+            _oldPasswordController.clear();
+            _newPasswordController.clear();
+            _confirmPasswordController.clear();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Center(
+                  child: Text('تم تغيير كلمة المرور بنجاح'),
                 ),
-                const SizedBox(width: 8),
-                const Text(
-                  'تغيير كلمة المرور',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            CustomTextField(
-              isPassword: true,
-              hintText: 'كلمة المرور الحالية',
-              icon: Icons.lock_outline,
-              controller: _oldPasswordController,
-              validator: (v) => v!.isEmpty ? 'يرجى إدخال كلمة المرور' : null,
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(
-              isPassword: true,
-              hintText: 'كلمة المرور الجديدة',
-              icon: Icons.lock_open,
-              controller: _newPasswordController,
-              validator: (v) => v!.length < 6 ? 'كلمة المرور ضعيفة' : null,
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(
-              isPassword: true,
-              hintText: 'تأكيد كلمة المرور',
-              icon: Icons.lock,
-              controller: _confirmPasswordController,
-              validator: (v) => v != _newPasswordController.text
-                  ? 'كلمات المرور غير متطابقة'
-                  : null,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(AppColors.primaryColor),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
+                backgroundColor: Colors.green,
               ),
-              child: const Text(
-                'حفظ التغييرات الجديدة',
-                style: TextStyle(fontWeight: FontWeight.bold),
+            );
+          } else if (state is ChangePasswordError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Center(child: Text(state.message)),
+                backgroundColor: Colors.redAccent,
               ),
-            ),
-          ],
+            );
+          }
+        },
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.security,
+                    color: Color(AppColors.primaryColor),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'تغيير كلمة المرور',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              TextFieldLabel(title: "كلمة المرور الحالية"),
+              CustomTextField(
+                isPassword: true,
+                hintText: 'كلمة المرور الحالية',
+                icon: Icons.lock_outline,
+                controller: _oldPasswordController,
+                validator: (v) =>
+                    v!.isEmpty ? 'يرجى إدخال كلمة المرور القديمة' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFieldLabel(title: "كلمة المرور الجديدة"),
+              CustomTextField(
+                isPassword: true,
+                hintText: 'كلمة المرور الجديدة',
+                icon: Icons.lock_open,
+                controller: _newPasswordController,
+                validator: (v) =>
+                    v!.length < 6 ? 'كلمة المرور ضعيفة جداً' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFieldLabel(title: "تأكيد كلمة المرور"),
+              CustomTextField(
+                isPassword: true,
+                hintText: 'تأكيد كلمة المرور',
+                icon: Icons.lock,
+                controller: _confirmPasswordController,
+                validator: (v) => v != _newPasswordController.text
+                    ? 'كلمات المرور غير متطابقة'
+                    : null,
+              ),
+              const SizedBox(height: 24),
+              BlocBuilder<AuthCubit, AuthState>(
+                builder: (context, state) {
+                  return AppButton(
+                    onPressed: _changePassword,
+                    isButtonEnabled: state is! ChangePasswordLoading,
+                    text: 'حفظ كلمة المرور الجديدة',
+                    buttonText: "",
+                    isLoading: state is ChangePasswordLoading,
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

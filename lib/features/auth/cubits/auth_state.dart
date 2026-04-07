@@ -26,7 +26,21 @@ class LoginError extends AuthState {
 
 class RegisterLoading extends AuthState {}
 
-class RegisterSuccess extends AuthState {}
+class RegisterSuccess extends AuthState {
+  final bool isProvider;
+  RegisterSuccess(this.isProvider);
+}
+
+class RegisterAndNavigateToProviderStep2 extends AuthState {
+  final String firstName;
+  final String lastName;
+  final String email;
+  RegisterAndNavigateToProviderStep2({
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+  });
+}
 
 class RegisterError extends AuthState {
   final String message;
@@ -55,7 +69,7 @@ class GovernorateSelectedState extends AuthState {}
 // --- Regions & Governorates States (اللي بنجيب بيها المناطق) ---
 class GetRegionsLoading extends AuthState {}
 
-class GetRegionsSuccess extends AuthState {}   
+class GetRegionsSuccess extends AuthState {}
 
 class GetRegionsError extends AuthState {
   final String message;
@@ -70,4 +84,29 @@ class GetServicesSuccess extends AuthState {}
 class GetServicesError extends AuthState {
   final String message;
   GetServicesError(this.message);
+}
+
+// حالات إكمال بيانات البروفايدر من Home
+class ProviderProfileCompletionRequired extends AuthState {}
+
+class ProviderProfileCompleted extends AuthState {}
+
+// Change Password
+class ChangePasswordLoading extends AuthState {}
+
+class ChangePasswordSuccess extends AuthState {}
+
+class ChangePasswordError extends AuthState {
+  final String message;
+  ChangePasswordError(this.message);
+}
+
+// Logout
+class LogoutLoading extends AuthState {}
+
+class LogoutSuccess extends AuthState {}
+
+class LogoutError extends AuthState {
+  final String message;
+  LogoutError(this.message);
 }
