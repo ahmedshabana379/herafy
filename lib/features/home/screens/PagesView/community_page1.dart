@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
 import 'package:herafy/features/screens/widgets/post_card.dart';
 
 class CommunityPage extends StatefulWidget {
@@ -117,6 +120,18 @@ class CommunityPage extends StatefulWidget {
 
 class _CommunityPageState extends State<CommunityPage>
     with AutomaticKeepAliveClientMixin {
+  SocialCubit? _socialCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    try {
+      _socialCubit = BlocProvider.of<SocialCubit>(context);
+      _socialCubit!.getPosts();
+    } catch (_) {
+      _socialCubit = null;
+    }
+  }
 
   @override
   bool get wantKeepAlive => true;
@@ -124,6 +139,50 @@ class _CommunityPageState extends State<CommunityPage>
   @override
   Widget build(BuildContext context) {
     super.build(context); // ← مهم
+
+    if (_socialCubit == null) {
+      return _buildPostsListFromMock();
+    }
+
+    return BlocBuilder<SocialCubit, SocialState>(
+      bloc: _socialCubit,
+      builder: (context, state) {
+        if (state is GetPostsLoading) {
+          return _buildLoadingSkeleton();
+        }
+
+        if (_socialCubit!.posts.isNotEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: ListView.builder(
+              controller: widget.scrollController,
+              itemCount: _socialCubit!.posts.length,
+              itemBuilder: (context, index) {
+                final post = _socialCubit!.posts[index];
+                return PostCard(
+                  postId: post.id,
+                  providerName: "Service Provider",
+                  providerJob: "Herafy",
+                  timeAgo: "Just now",
+                  description: post.description ?? post.title,
+                  imageUrl: (post.images != null && post.images!.isNotEmpty)
+                      ? post.images!.first
+                      : "https://picsum.photos/seed/post_${post.id}/400/300",
+                  likesCount: post.reactionsCount,
+                  commentsCount: 0,
+                  isServiceOffer: false,
+                );
+              },
+            ),
+          );
+        }
+
+        return _buildPostsListFromMock();
+      },
+    );
+  }
+
+  Widget _buildPostsListFromMock() {
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: ListView.builder(
@@ -143,6 +202,135 @@ class _CommunityPageState extends State<CommunityPage>
           );
         },
       ),
+    );
+  }
+
+  Widget _buildLoadingSkeleton() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: ListView.builder(
+        controller: widget.scrollController,
+        itemCount: 4,
+        itemBuilder: (context, index) => const _PostSkeletonCard(),
+      ),
+    );
+  }
+}
+
+class _PostSkeletonCard extends StatelessWidget {
+  const _PostSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const _ShimmerBox(width: 40, height: 40, radius: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _ShimmerBox(width: 120, height: 12),
+                    const SizedBox(height: 8),
+                    const _ShimmerBox(width: 90, height: 10),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const _ShimmerBox(width: double.infinity, height: 10),
+          const SizedBox(height: 8),
+          const _ShimmerBox(width: 180, height: 10),
+          const SizedBox(height: 12),
+          const _ShimmerBox(width: double.infinity, height: 220, radius: 8),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const _ShimmerBox(width: 55, height: 10),
+              const SizedBox(width: 24),
+              const _ShimmerBox(width: 45, height: 10),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShimmerBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final double radius;
+  const _ShimmerBox({
+    required this.width,
+    required this.height,
+    this.radius = 6,
+  });
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final t = _controller.value;
+        return Container(
+          width: widget.width == double.infinity ? null : widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.radius),
+            gradient: LinearGradient(
+              begin: Alignment(-1 + (2 * t), -0.3),
+              end: Alignment(1 + (2 * t), 0.3),
+              colors: const [
+                Color(0xFFE9E9E9),
+                Color(0xFFF5F5F5),
+                Color(0xFFE9E9E9),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

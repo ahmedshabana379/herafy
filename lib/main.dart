@@ -8,6 +8,7 @@ import 'package:herafy/features/auth/screens/login.dart';
 import 'package:herafy/features/auth/screens/role_selection.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
+import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
 import 'package:herafy/features/screens/create_post_screen.dart';
 import 'package:herafy/features/screens/edit_account_page.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
@@ -79,26 +80,30 @@ class _HerafyAppState extends State<HerafyApp> {
           );
         }
 
-        return BlocProvider<AuthCubit>.value(
-          value: _authCubit,
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: _authCubit),
+            BlocProvider<SocialCubit>(create: (_) => SocialCubit()),
+          ],
           child: MaterialApp(
-            routes: {
-              RoleSelectionPage.routeName: (context) =>
-                  const RoleSelectionPage(),
-              LoginPage.routeName: (context) => const LoginPage(),
-              CustomerRegisterPage.routeName: (context) =>
-                  const CustomerRegisterPage(),
-              ProviderRegisterPage.routeName: (context) =>
-                  const ProviderRegisterPage(),
-              WaitingApprovePage.routeName: (context) =>
-                  const WaitingApprovePage(),
-              HomePage.routeName: (context) => const HomePage(),
-              EditAccountPage.routeName: (context) => const EditAccountPage(),
-              CreatePostScreen.routeName: (context) => const CreatePostScreen(),
-            },
-            debugShowCheckedModeBanner: false,
-            initialRoute: snapshot.data ?? LoginPage.routeName,
-          ),
+              routes: {
+                RoleSelectionPage.routeName: (context) =>
+                    const RoleSelectionPage(),
+                LoginPage.routeName: (context) => const LoginPage(),
+                CustomerRegisterPage.routeName: (context) =>
+                    const CustomerRegisterPage(),
+                ProviderRegisterPage.routeName: (context) =>
+                    const ProviderRegisterPage(),
+                WaitingApprovePage.routeName: (context) =>
+                    const WaitingApprovePage(),
+                HomePage.routeName: (context) => const HomePage(),
+                EditAccountPage.routeName: (context) => const EditAccountPage(),
+                CreatePostScreen.routeName: (context) =>
+                    const CreatePostScreen(),
+              },
+              debugShowCheckedModeBanner: false,
+              initialRoute: snapshot.data ?? LoginPage.routeName,
+            ),
         );
       },
     );

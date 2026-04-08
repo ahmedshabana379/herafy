@@ -53,4 +53,22 @@ class DioHelper {
 
     return await dio!.post(endPoint, data: data, queryParameters: query);
   }
+
+  static Future<Response> putRequest({
+  required String endPoint,
+  dynamic data,
+  Map<String, dynamic>? queryParameters,
+}) async {
+  return await dio!.put(
+    endPoint,
+    data: data,
+    queryParameters: queryParameters,
+  );
+}
+static Future<Response> patchRequest({
+  required String endPoint,
+  dynamic data,
+}) async {
+  return await dio!.patch(endPoint, data: data);
+}
 }

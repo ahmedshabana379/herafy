@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
 import 'package:herafy/features/screens/widgets/comment_item.dart';
 import 'package:herafy/features/screens/widgets/post_card.dart';
 
 class PostDetailsPage extends StatefulWidget {
   final PostCard post;
+  final int postId;
   final bool isInitialLiked;
   final int initialLikesCount;
   final Function(bool, int) onBack; // لتحديث الكارت عند الرجوع
@@ -12,6 +16,7 @@ class PostDetailsPage extends StatefulWidget {
   const PostDetailsPage({
     super.key,
     required this.post,
+    required this.postId,
     required this.isInitialLiked,
     required this.initialLikesCount,
     required this.onBack,
@@ -31,6 +36,11 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
     super.initState();
     isLiked = widget.isInitialLiked;
     likesCount = widget.initialLikesCount;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.postId > 0) {
+        context.read<SocialCubit>().getComments(widget.postId);
+      }
+    });
   }
 
   @override
@@ -156,11 +166,39 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
   }
 
   Widget _buildCommentsList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 3,
-      itemBuilder: (context, index) => const CommentItem(),
+    return BlocBuilder<SocialCubit, SocialState>(
+      builder: (context, state) {
+        final cubit = context.read<SocialCubit>();
+        if (state is GetCommentsLoading) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (cubit.comments.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              "لا توجد تعليقات بعد",
+              style: TextStyle(color: Colors.grey),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: cubit.comments.length,
+          itemBuilder: (context, index) {
+            final comment = cubit.comments[index];
+            return CommentItem(
+              userName: comment.userName,
+              content: comment.content,
+            );
+          },
+        );
+      },
     );
   }
 
@@ -197,9 +235,45 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
             ),
           ),
           const SizedBox(width: 10),
-          CircleAvatar(
-            backgroundColor: Color(AppColors.primaryColor),
-            child: const Icon(Icons.send, color: Colors.white, size: 18),
+          BlocConsumer<SocialCubit, SocialState>(
+            listener: (context, state) {
+              if (state is AddCommentSuccess) {
+                _commentController.clear();
+              } else if (state is AddCommentError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.error),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              final isSending = state is AddCommentLoading;
+              return GestureDetector(
+                onTap: isSending || widget.postId <= 0
+                    ? null
+                    : () {
+                        context.read<SocialCubit>().addComment(
+                          postId: widget.postId,
+                          content: _commentController.text,
+                        );
+                      },
+                child: CircleAvatar(
+                  backgroundColor: Color(AppColors.primaryColor),
+                  child: isSending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.send, color: Colors.white, size: 18),
+                ),
+              );
+            },
           ),
         ],
       ),

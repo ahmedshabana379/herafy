@@ -3,12 +3,14 @@ import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/screens/post_details_page.dart';
 
 class PostCard extends StatefulWidget {
+  final int postId;
   final String providerName, providerJob, timeAgo, description, imageUrl;
   final int likesCount, commentsCount;
   final bool isServiceOffer;
 
   const PostCard({
     super.key,
+    this.postId = 0,
     required this.providerName,
     required this.providerJob,
     required this.timeAgo,
@@ -42,6 +44,7 @@ class _PostCardState extends State<PostCard> {
         MaterialPageRoute(
           builder: (context) => PostDetailsPage(
             post: widget,
+            postId: widget.postId,
             isInitialLiked: isLiked,
             initialLikesCount: likesCount,
             // كول باك لتحديث الحالة في الكارت لما يرجع من الصفحة

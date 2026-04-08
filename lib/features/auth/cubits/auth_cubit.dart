@@ -177,73 +177,74 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   // --- 6. Provider Registration - Step 2 (Complete Provider Data) ---
-  Future<void> completeProviderRegistration({
-    required String category,
-    required String? subCategory,
-    required String governorateId,
-    required String regionId,
-    required String workRange,
-    required String address,
-    required File idCardImage,
-    required File profileImage,
-    required File criminalRecordImage,
-  }) async {
-    emit(ProviderRegisterLoading());
-    try {
-      // تحضير FormData لإرسال الملف
-      FormData formData = FormData.fromMap({
-        "category": category,
-        "subCategory": subCategory ?? "",
-        "governorateId": governorateId,
-        "regionId": regionId,
-        "workRange": workRange,
-        "address": address,
-        "idCardImage": await MultipartFile.fromFile(
-          idCardImage.path,
-          filename: 'id_card_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
-        "profileImage": await MultipartFile.fromFile(
-          profileImage.path,
-          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
-        "criminalRecordImage": await MultipartFile.fromFile(
-          criminalRecordImage.path,
-          filename: 'criminal_record_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
-      });
+Future<void> completeProviderRegistration({
+  required String governorateId,
+  required String regionId,
+  required String workRange,
+  required String address,
+  required List<int> serviceIds,
+  required File idCardImage,
+  required File profileImage,
+  required File criminalRecordImage,
+}) async {
+  emit(ProviderRegisterLoading());
+  try {
+    // Step 1: Update profile
+    await DioHelper.patchRequest(
+      endPoint: AppEndPoints.updateProviderProfile,
+      data: {
+        "GovernorateId": int.parse(governorateId),
+        "RegionId": int.parse(regionId),
+        "BaseLocation": {
+          "Latitude": 0.0,
+          "Longitude": 0.0,
+          "AddressText": address,
+        },
+        "ServiceIds": serviceIds,
+      },
+    );
 
-      final response = await DioHelper.postRequest(
-        endPoint: AppEndPoints.completeProviderProfile,
-        data: formData,
-      );
+    // Step 2: Upload documents
+    await _uploadDocument(file: profileImage,       documentType: 1, fileName: "profile_photo");
+    await _uploadDocument(file: idCardImage,        documentType: 2, fileName: "national_id");
+    await _uploadDocument(file: criminalRecordImage,documentType: 3, fileName: "criminal_record");
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // حفظ البيانات المكتملة
-        providerCategory = category;
-        providerSubCategory = subCategory;
-        providerGovernateId = governorateId;
-        providerRegionId = regionId;
-        providerRange = workRange;
-        provideraddress = address;
-        idCardImagePath = idCardImage.path;
+    await CacheHelper.saveProviderProgress(0.0);
+    await CacheHelper.clearProviderStep1Data();
+    await CacheHelper.markProviderProfileCompleted();
 
-        // حذف البيانات المحفوظة محلياً بعد التسجيل الناجح
-        await CacheHelper.saveProviderProgress(0.0);
-        await CacheHelper.clearProviderStep1Data();
-
-        // وضع علامة على أن البروفايدر أكمل البيانات
-        await CacheHelper.markProviderProfileCompleted();
-
-        emit(ProviderRegisterSuccess());
-      }
-    } on DioException catch (e) {
-      emit(
-        ProviderRegisterError(
-          e.response?.data['message'] ?? "فشل إكمال بيانات الحرفي",
-        ),
-      );
+    emit(ProviderRegisterSuccess());
+  } on DioException catch (e) {
+    final data = e.response?.data;
+    String message = "فشل إكمال بيانات الحرفي";
+    if (data is Map && data['message'] != null) {
+      message = data['message'].toString();
     }
+    emit(ProviderRegisterError(message));
+  } catch (e) {
+    emit(ProviderRegisterError("حدث خطأ غير متوقع"));
   }
+}
+
+Future<void> _uploadDocument({
+  required File file,
+  required int documentType,
+  required String fileName,
+}) async {
+  FormData formData = FormData.fromMap({
+    "DocumentType": documentType,
+    "DocumentFile": await MultipartFile.fromFile(
+      file.path,
+      filename: '${fileName}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    ),
+    "FileName": fileName,
+  });
+
+  await DioHelper.postRequest(
+    endPoint: AppEndPoints.uploadDocument,
+    data: formData,
+  );
+}
 
   // --- 7. Fetching Data (المحافظات والخدمات) ---
   Future<void> getGovernatesData() async {

@@ -16,18 +16,28 @@ class SocialCubit extends Cubit<SocialState> {
   List<CommentModel> comments = [];
 
   // 1. جلب المنشورات
-  void getPosts() async {
-    emit(GetPostsLoading());
+  Future<void> getPosts({bool isRefresh = false}) async {
+    if (!isRefresh) {
+      emit(GetPostsLoading());
+    }
     try {
       final response = await DioHelper.getRequest(
         endPoint: AppEndPoints.getRecentPosts, // استخدمت الـ Constant اللي عندك
       );
+      final dynamic payload = response.data;
+      List rawList = [];
+      if (payload is List) {
+        rawList = payload;
+      } else if (payload is Map<String, dynamic>) {
+        final nested =
+            payload['data'] ??
+            payload['items'] ??
+            payload['posts'] ??
+            payload['result'];
+        if (nested is List) rawList = nested;
+      }
 
-      // الباك أند غالباً بيرجع ليستا جوه حقل اسمه data أو بشكل مباشر
-      // لو الليستا راجعة مباشر:
-      posts = (response.data as List)
-          .map((e) => PostModel.fromJson(e))
-          .toList();
+      posts = rawList.map((e) => PostModel.fromJson(e)).toList();
 
       emit(GetPostsSuccess());
     } catch (error) {
@@ -36,7 +46,7 @@ class SocialCubit extends Cubit<SocialState> {
   }
 
   // 2. إضافة منشور (مع دعم الصور)
-  void createPost({
+  Future<void> createPost({
     required String title,
     required String description,
     List<File>? images,
@@ -75,13 +85,24 @@ class SocialCubit extends Cubit<SocialState> {
       }
       FormData formData = FormData.fromMap(formMap);
 
+      // تحديث واجهة المستخدم فوراً (Optimistic Update)
+      final tempPost = PostModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        title: trimmedTitle,
+        description: trimmedDescription,
+        // إفراغ الصورة مؤقتاً لتجنب أخطاء رفع المسار المحلي في Image.network
+        images: [],
+      );
+      posts.insert(0, tempPost);
+      emit(GetPostsSuccess());
+
       await DioHelper.postRequest(
         endPoint: AppEndPoints.addPost,
         data: formData,
       );
 
-      getPosts(); // تحديث القائمة بعد الإضافة
       emit(CreatePostSuccess());
+      getPosts(isRefresh: true); // تحديث القائمة بعد الإضافة بدون شاشة تحميل
     } on DioException catch (error) {
       final data = error.response?.data;
       String message = "Failed to create post";
@@ -97,17 +118,29 @@ class SocialCubit extends Cubit<SocialState> {
   }
 
   // 3. جلب تعليقات منشور معين
-  void getComments(int postId) async {
-    emit(GetCommentsLoading());
+  void getComments(int postId, {bool isRefresh = false}) async {
+    if (!isRefresh) {
+      emit(GetCommentsLoading());
+    }
     try {
       final response = await DioHelper.getRequest(
         endPoint:
             "${AppEndPoints.getPostComments}$postId", // دمج الـ ID في الـ URL
       );
+      final dynamic payload = response.data;
+      List rawList = [];
+      if (payload is List) {
+        rawList = payload;
+      } else if (payload is Map<String, dynamic>) {
+        final nested =
+            payload['data'] ??
+            payload['items'] ??
+            payload['comments'] ??
+            payload['result'];
+        if (nested is List) rawList = nested;
+      }
 
-      comments = (response.data as List)
-          .map((e) => CommentModel.fromJson(e))
-          .toList();
+      comments = rawList.map((e) => CommentModel.fromJson(e)).toList();
 
       emit(GetCommentsSuccess());
     } catch (error) {
@@ -119,15 +152,76 @@ class SocialCubit extends Cubit<SocialState> {
   void addComment({required int postId, required String content}) async {
     emit(AddCommentLoading());
     try {
+      final text = content.trim();
+      if (text.isEmpty) {
+        emit(AddCommentError("Comment cannot be empty"));
+        return;
+      }
+      // تحديث واجهة المستخدم فوراً (Optimistic Update)
+      final tempComment = CommentModel(
+        id: DateTime.now().millisecondsSinceEpoch,
+        postId: postId,
+        content: text,
+        userName: "أنا", // اسم مبدئي
+      );
+      comments.add(tempComment);
+      emit(GetCommentsSuccess());
+
       await DioHelper.postRequest(
         endPoint: AppEndPoints.addComment,
-        data: {"postId": postId, "content": content},
+        data: {"postId": postId, "content": text},
       );
 
-      getComments(postId); // تحديث التعليقات فوراً
+      getComments(
+        postId,
+        isRefresh: true,
+      ); // تحديث التعليقات من السيرفر بدون شاشة تحميل
       emit(AddCommentSuccess());
     } catch (error) {
       emit(AddCommentError(error.toString()));
     }
   }
+
+  // React على بوست
+void reactToPost({required int postId, required int reactionType}) async {
+  emit(ReactToPostLoading());
+  try {
+    await DioHelper.putRequest(
+      endPoint: "${AppEndPoints.reactToPost}$postId",
+      queryParameters: {"ReactionType": reactionType},
+    );
+    emit(ReactToPostSuccess());
+    getPosts(isRefresh: true);
+  } on DioException catch (error) {
+    final data = error.response?.data;
+    String message = "Failed to react to post";
+    if (data is Map && data['message'] != null) {
+      message = data['message'].toString();
+    }
+    emit(ReactToPostError(message));
+  } catch (error) {
+    emit(ReactToPostError("Failed to react to post"));
+  }
+}
+
+// React على كومنت
+void reactToComment({required int commentId, required int reactionType}) async {
+  emit(ReactToCommentLoading());
+  try {
+    await DioHelper.putRequest(
+      endPoint: "${AppEndPoints.reactToComment}$commentId",
+      queryParameters: {"ReactionType": reactionType},
+    );
+    emit(ReactToCommentSuccess());
+  } on DioException catch (error) {
+    final data = error.response?.data;
+    String message = "Failed to react to comment";
+    if (data is Map && data['message'] != null) {
+      message = data['message'].toString();
+    }
+    emit(ReactToCommentError(message));
+  } catch (error) {
+    emit(ReactToCommentError("Failed to react to comment"));
+  }
+}
 }

@@ -31,3 +31,18 @@ class AddCommentError extends SocialState {
   final String error;
   AddCommentError(this.error);
 }
+
+// أضف دول في posts_and_comments_state.dart
+class ReactToPostLoading extends SocialState {}
+class ReactToPostSuccess extends SocialState {}
+class ReactToPostError extends SocialState {
+  final String error;
+  ReactToPostError(this.error);
+}
+
+class ReactToCommentLoading extends SocialState {}
+class ReactToCommentSuccess extends SocialState {}
+class ReactToCommentError extends SocialState {
+  final String error;
+  ReactToCommentError(this.error);
+}

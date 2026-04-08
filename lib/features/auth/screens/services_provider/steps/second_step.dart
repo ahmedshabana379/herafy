@@ -384,12 +384,16 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                       if (selectedGovernorate != null &&
                           selectedRegion != null) {
                         cubit.completeProviderRegistration(
-                          category: selectedMainCategory ?? "",
-                          subCategory: selectedSubCategory,
                           governorateId: selectedGovernorate!.id.toString(),
                           regionId: selectedRegion!.id.toString(),
                           workRange: _rangeController.text.trim(),
                           address: _addressController.text.trim(),
+                          serviceIds: [
+                            if (cubit.providerCategory != null)
+                              int.parse(cubit.providerCategory!),
+                            if (cubit.providerSubCategory != null)
+                              int.parse(cubit.providerSubCategory!),
+                          ],
                           idCardImage: _idCardImage!,
                           profileImage: _profileImage!,
                           criminalRecordImage: _criminalRecordImage!,
