@@ -67,7 +67,7 @@ class AuthCubit extends Cubit<AuthState> {
         _currentUser = userData;
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      // Handle any errors during loading user data
     }
   }
 
@@ -81,6 +81,7 @@ class AuthCubit extends Cubit<AuthState> {
       );
       if (response.statusCode == 200) {
         UserModel user = UserModel.fromJson(response.data);
+
         _currentUser = user;
         if (user.accessToken != null) {
           await CacheHelper.saveToken(user.accessToken!);
@@ -177,74 +178,90 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   // --- 6. Provider Registration - Step 2 (Complete Provider Data) ---
-Future<void> completeProviderRegistration({
-  required String governorateId,
-  required String regionId,
-  required String workRange,
-  required String address,
-  required List<int> serviceIds,
-  required File idCardImage,
-  required File profileImage,
-  required File criminalRecordImage,
-}) async {
-  emit(ProviderRegisterLoading());
-  try {
-    // Step 1: Update profile
-    await DioHelper.patchRequest(
-      endPoint: AppEndPoints.updateProviderProfile,
-      data: {
-        "GovernorateId": int.parse(governorateId),
-        "RegionId": int.parse(regionId),
-        "BaseLocation": {
-          "Latitude": 0.0,
-          "Longitude": 0.0,
-          "AddressText": address,
+  Future<void> completeProviderRegistration({
+    required String governorateId,
+    required String regionId,
+    required String workRange,
+    required String address,
+    required List<int> serviceIds,
+    required File idCardImage,
+    required File profileImage,
+    required File criminalRecordImage,
+  }) async {
+    emit(ProviderRegisterLoading());
+    try {
+      // Step 1: Update profile
+      await DioHelper.patchRequest(
+        endPoint: AppEndPoints.updateProviderProfile,
+        data: {
+          "GovernorateId": int.parse(governorateId),
+          "RegionId": int.parse(regionId),
+          "BaseLocation": {
+            "Latitude": 0.0,
+            "Longitude": 0.0,
+            "AddressText": address,
+          },
+          "ServiceIds": serviceIds,
         },
-        "ServiceIds": serviceIds,
-      },
-    );
+      );
 
-    // Step 2: Upload documents
-    await _uploadDocument(file: profileImage,       documentType: 1, fileName: "profile_photo");
-    await _uploadDocument(file: idCardImage,        documentType: 2, fileName: "national_id");
-    await _uploadDocument(file: criminalRecordImage,documentType: 3, fileName: "criminal_record");
+      // Step 2: Upload documents
+      await _uploadDocument(
+        file: profileImage,
+        documentType: 1,
+        fileName: "profile_photo",
+      );
+      await _uploadDocument(
+        file: idCardImage,
+        documentType: 2,
+        fileName: "national_id",
+      );
+      await _uploadDocument(
+        file: criminalRecordImage,
+        documentType: 3,
+        fileName: "criminal_record",
+      );
 
-    await CacheHelper.saveProviderProgress(0.0);
-    await CacheHelper.clearProviderStep1Data();
-    await CacheHelper.markProviderProfileCompleted();
-
-    emit(ProviderRegisterSuccess());
-  } on DioException catch (e) {
-    final data = e.response?.data;
-    String message = "فشل إكمال بيانات الحرفي";
-    if (data is Map && data['message'] != null) {
-      message = data['message'].toString();
+      await CacheHelper.saveProviderProgress(0.0);
+      await CacheHelper.clearProviderStep1Data();
+      await CacheHelper.markProviderProfileCompleted();
+      if (_currentUser != null) {
+        final updatedUser = _currentUser!.copyWith(status: 1); // UnderReview
+        await CacheHelper.saveUserData(updatedUser);
+        _currentUser = updatedUser;
+      }
+      emit(ProviderRegisterSuccess());
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      String message = "فشل إكمال بيانات الحرفي";
+      if (data is Map && data['message'] != null) {
+        message = data['message'].toString();
+      }
+      emit(ProviderRegisterError(message));
+    } catch (e) {
+      emit(ProviderRegisterError("حدث خطأ غير متوقع"));
     }
-    emit(ProviderRegisterError(message));
-  } catch (e) {
-    emit(ProviderRegisterError("حدث خطأ غير متوقع"));
   }
-}
 
-Future<void> _uploadDocument({
-  required File file,
-  required int documentType,
-  required String fileName,
-}) async {
-  FormData formData = FormData.fromMap({
-    "DocumentType": documentType,
-    "DocumentFile": await MultipartFile.fromFile(
-      file.path,
-      filename: '${fileName}_${DateTime.now().millisecondsSinceEpoch}.jpg',
-    ),
-    "FileName": fileName,
-  });
+  Future<void> _uploadDocument({
+    required File file,
+    required int documentType,
+    required String fileName,
+  }) async {
+    FormData formData = FormData.fromMap({
+      "DocumentType": documentType,
+      "DocumentFile": await MultipartFile.fromFile(
+        file.path,
+        filename: '${fileName}_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ),
+      "FileName": fileName,
+    });
 
-  await DioHelper.postRequest(
-    endPoint: AppEndPoints.uploadDocument,
-    data: formData,
-  );
-}
+    await DioHelper.postRequest(
+      endPoint: AppEndPoints.uploadDocument,
+      data: formData,
+    );
+  }
 
   // --- 7. Fetching Data (المحافظات والخدمات) ---
   Future<void> getGovernatesData() async {
@@ -287,5 +304,23 @@ Future<void> _uploadDocument({
     } catch (e) {
       emit(GetServicesError(e.toString()));
     }
+
+    // check provider status after fetching services (in case user is provider and we need to show them the status)
+    void checkProviderStatus() async {
+  final user = _currentUser ?? await CacheHelper.getUserData();
+  if (user == null || !user.isProvider) return;
+
+  switch (user.status) {
+    case 1:
+      emit(ProviderUnderReviewState());
+      break;
+    case 2:
+      emit(ProviderApprovedState());
+      break;
+    case 3:
+      emit(ProviderRejectedState());
+      break;
+  }
+}
   }
 }

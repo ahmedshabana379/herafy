@@ -2,6 +2,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:herafy/features/auth/models/user_model.dart';
 import 'dart:convert';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class CacheHelper {
   static final storage = FlutterSecureStorage(
     // ignore: deprecated_member_use
@@ -27,7 +29,6 @@ class CacheHelper {
     try {
       await storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
     } catch (e) {
-      print('Error saving user data: $e');
     }
   }
 
@@ -40,7 +41,6 @@ class CacheHelper {
       }
       return null;
     } catch (e) {
-      print('Error getting user data: $e');
       return null;
     }
   }
@@ -60,7 +60,6 @@ class CacheHelper {
       await storage.write(key: 'provider_step1_data', value: jsonEncode(data));
       await storage.write(key: 'provider_needs_completion', value: 'true');
     } catch (e) {
-      print('Error saving provider step 1 data: $e');
     }
   }
 
@@ -73,7 +72,6 @@ class CacheHelper {
       }
       return null;
     } catch (e) {
-      print('Error getting provider step 1 data: $e');
       return null;
     }
   }
@@ -84,7 +82,6 @@ class CacheHelper {
       final value = await storage.read(key: 'provider_needs_completion');
       return value == 'true';
     } catch (e) {
-      print('Error reading provider pending completion flag: $e');
       return false;
     }
   }
@@ -95,7 +92,6 @@ class CacheHelper {
       await storage.delete(key: 'provider_step1_data');
       await storage.delete(key: 'provider_needs_completion');
     } catch (e) {
-      print('Error clearing provider step 1 data: $e');
     }
   }
 
@@ -104,7 +100,6 @@ class CacheHelper {
     try {
       await storage.write(key: 'provider_progress', value: progress.toString());
     } catch (e) {
-      print('Error saving provider progress: $e');
     }
   }
 
@@ -114,7 +109,6 @@ class CacheHelper {
       final progress = await storage.read(key: 'provider_progress');
       return progress != null ? double.parse(progress) : 0.0;
     } catch (e) {
-      print('Error getting provider progress: $e');
       return 0.0;
     }
   }
@@ -124,7 +118,6 @@ class CacheHelper {
     try {
       await storage.write(key: 'provider_profile_completed', value: 'true');
     } catch (e) {
-      print('Error marking provider profile as completed: $e');
     }
   }
 
@@ -134,7 +127,6 @@ class CacheHelper {
       final value = await storage.read(key: 'provider_profile_completed');
       return value == 'true';
     } catch (e) {
-      print('Error checking provider profile completion: $e');
       return false;
     }
   }
@@ -143,4 +135,16 @@ class CacheHelper {
   static Future<void> clearAll() async {
     await storage.deleteAll();
   }
+// dismiss approved banner
+  static const String _approvedBannerDismissed = 'approved_banner_dismissed';
+
+static Future<void> dismissApprovedBanner() async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(_approvedBannerDismissed, true);
+}
+
+static Future<bool> isApprovedBannerDismissed() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getBool(_approvedBannerDismissed) ?? false;
+}
 }

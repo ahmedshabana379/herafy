@@ -109,4 +109,10 @@ class LogoutSuccess extends AuthState {}
 class LogoutError extends AuthState {
   final String message;
   LogoutError(this.message);
+
 }
+
+
+class ProviderApprovedState extends AuthState {}
+class ProviderRejectedState extends AuthState {}
+class ProviderUnderReviewState extends AuthState {}

@@ -25,8 +25,7 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   bool _isBarVisible = true;
   UserModel? _user;
-  bool _isProviderProfileCompleted = false;
-  bool _isProviderPendingCompletion = false;
+  bool _approvedBannerDismissed = false; // ← جديد
 
   @override
   void initState() {
@@ -44,20 +43,10 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadUserData() async {
     try {
       final userData = await CacheHelper.getUserData();
-      final profileCompleted = await CacheHelper.isProviderProfileCompleted();
-      final providerPendingCompletion =
-          await CacheHelper.isProviderPendingCompletion();
-      final providerStep1Draft = await CacheHelper.getProviderStep1Data();
-      final hasMatchingProviderDraft =
-          providerStep1Draft != null &&
-          userData?.email != null &&
-          providerStep1Draft['email']?.toString().toLowerCase() ==
-              userData!.email!.toLowerCase();
+      final dismissed = await CacheHelper.isApprovedBannerDismissed();
       setState(() {
         _user = userData;
-        _isProviderProfileCompleted = profileCompleted;
-        _isProviderPendingCompletion =
-            providerPendingCompletion || hasMatchingProviderDraft;
+        _approvedBannerDismissed = dismissed;
       });
     } catch (e) {
       print('Error loading user data: $e');
@@ -74,17 +63,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final isProvider = _user?.isProvider == true;
-    final isProfileComplete =
-        (_user?.isProfileComplete ?? false) || _isProviderProfileCompleted;
-    final isProviderApproved = _user?.isAuthenticated == true;
-    final showProviderDashboard =
-        isProvider && isProfileComplete && isProviderApproved;
-    final showCompleteProfileCta =
-        (isProvider && !isProfileComplete) || _isProviderPendingCompletion;
-    final showWaitingApprovalCta =
-        isProvider && isProfileComplete && !isProviderApproved;
+    final int status = _user?.status ?? 0;
 
-    // الهوم العادي للعميل
+    final showCompleteProfileCta = isProvider && status == 0;
+    final showWaitingApprovalCta = isProvider && status == 1;
+    final showApprovedCta =
+        isProvider && status == 2 && !_approvedBannerDismissed; // ← جديد
+    final showRejectedCta = isProvider && status == 3;
+    final showProviderDashboard = isProvider && status == 2;
+
     return Scaffold(
       floatingActionButton: _selectedIndex == 0
           ? AnimatedScale(
@@ -112,7 +99,6 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           mainAxisSize: MainAxisSize.max,
@@ -133,52 +119,73 @@ class _HomePageState extends State<HomePage> {
       drawer: ClientDrawer(),
       body: Column(
         children: [
-          if (showCompleteProfileCta || showWaitingApprovalCta)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF6F4FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE4DCFF)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      showCompleteProfileCta
-                          ? Icons.info_outline
-                          : Icons.access_time_filled_rounded,
-                      color: Color(AppColors.primaryColor),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        showCompleteProfileCta
-                            ? "بيانات حسابك كمقدم خدمة غير مكتملة"
-                            : "تم إرسال بياناتك وهي الآن قيد المراجعة",
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                    if (showCompleteProfileCta)
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ProviderRegisterPage(
-                                startFromSecondStep: true,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text("إكمال"),
-                      ),
-                  ],
-                ),
-              ),
+          // --- Banners ---
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: _isBarVisible && showCompleteProfileCta ? null : 0,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(),
+            child: _buildBanner(
+              icon: Icons.info_outline,
+              message: "بيانات حسابك كمقدم خدمة غير مكتملة",
+              actionLabel: "إكمال",
+              onAction: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const ProviderRegisterPage(startFromSecondStep: true),
+                  ),
+                );
+              },
             ),
+          ),
+
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: _isBarVisible && showWaitingApprovalCta ? null : 0,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(),
+            child: _buildBanner(
+              icon: Icons.access_time_filled_rounded,
+              message: "تم إرسال بياناتك وهي الآن قيد المراجعة",
+            ),
+          ),
+
+          // ← Banner الموافقة الجديد
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: _isBarVisible && showApprovedCta ? null : 0,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(),
+            child: _buildBanner(
+              icon: Icons.check_circle_outline,
+              message: "🎉 تهانينا! تم قبولك كمقدم خدمة",
+              color: Colors.green.shade50,
+              borderColor: Colors.green.shade200,
+              iconColor: Colors.green,
+              onDismiss: () async {
+                await CacheHelper.dismissApprovedBanner();
+                setState(() => _approvedBannerDismissed = true);
+              },
+            ),
+          ),
+
+          AnimatedContainer(
+            duration: Duration(milliseconds: 300),
+            height: _isBarVisible && showRejectedCta ? null : 0,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(),
+            child: _buildBanner(
+              icon: Icons.cancel_outlined,
+              message: "تم رفض طلبك، يرجى التواصل مع الدعم",
+              color: Colors.red.shade50,
+              borderColor: Colors.red.shade200,
+              iconColor: Colors.redAccent,
+            ),
+          ),
+
+          // --- Nav Bar ---
           AnimatedContainer(
             duration: Duration(milliseconds: 300),
             height: _isBarVisible ? 80 : 0,
@@ -206,6 +213,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
+          // --- Pages ---
           Expanded(
             child: PageView(
               controller: _pageController,
@@ -231,6 +239,50 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBanner({
+    required IconData icon,
+    required String message,
+    String? actionLabel,
+    VoidCallback? onAction,
+    VoidCallback? onDismiss, // ← جديد
+    Color? color,
+    Color? borderColor,
+    Color? iconColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: color ?? const Color(0xFFF6F4FF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor ?? const Color(0xFFE4DCFF)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor ?? Color(AppColors.primaryColor)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            if (actionLabel != null && onAction != null)
+              TextButton(onPressed: onAction, child: Text(actionLabel)),
+            // ← زرار الإغلاق
+            if (onDismiss != null)
+              IconButton(
+                icon: Icon(Icons.close, size: 18),
+                onPressed: onDismiss,
+              ),
+          ],
+        ),
       ),
     );
   }
