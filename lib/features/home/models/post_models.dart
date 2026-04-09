@@ -2,21 +2,23 @@ class PostModel {
   final int id;
   final String title;
   final String? description;
-  final List<String>? images;
-  final int? governorateId;
-  final int? regionId;
-  final int reactionsCount;
-  final bool isReacted; 
+  final List<String> imageUrls;
+  final String? clientName;
+  final String? clientPictureUrl;
+  final String? createdAt;
+  final int commentsCount;
+  final bool isProvider;
 
   PostModel({
     required this.id,
     required this.title,
     this.description,
-    this.images,
-    this.governorateId,
-    this.regionId,
-    this.reactionsCount = 0,
-    this.isReacted = false,
+    this.imageUrls = const [],
+    this.clientName,
+    this.clientPictureUrl,
+    this.createdAt,
+    this.commentsCount = 0,
+    this.isProvider = false,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) {
@@ -24,11 +26,14 @@ class PostModel {
       id: json['id'],
       title: json['title'] ?? '',
       description: json['description'],
-      images: json['images'] != null ? List<String>.from(json['images']) : [],
-      governorateId: json['governorateId'],
-      regionId: json['regionId'],
-      reactionsCount: json['reactionsCount'] ?? 0,
-      isReacted: json['isReacted'] ?? false,
+      imageUrls: json['imageUrls'] != null
+          ? List<String>.from(json['imageUrls'])
+          : [],
+      clientName: json['clientName'],
+      clientPictureUrl: json['clientPictureUrl'],
+      createdAt: json['createdAt'],
+      commentsCount: json['commentsCount'] ?? 0,
+      isProvider: json['isProvider'] ?? false,
     );
   }
 }

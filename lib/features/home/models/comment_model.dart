@@ -1,6 +1,6 @@
 class CommentModel {
   final int id;
-  final String content;
+  final String Message;
   final int postId;
   final String userName;
   final String? userImage;
@@ -8,7 +8,7 @@ class CommentModel {
 
   CommentModel({
     required this.id,
-    required this.content,
+    required this.Message,
     required this.postId,
     required this.userName,
     this.userImage,
@@ -18,7 +18,7 @@ class CommentModel {
   factory CommentModel.fromJson(Map<String, dynamic> json) {
     return CommentModel(
       id: json['id'],
-      content: json['content'] ?? '',
+      Message: json['message'] ?? '',
       postId: json['postId'],
       userName: json['userName'] ?? 'User',
       userImage: json['userImage'],

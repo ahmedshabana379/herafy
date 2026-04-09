@@ -138,7 +138,7 @@ class _CommunityPageState extends State<CommunityPage>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // ← مهم
+    super.build(context);
 
     if (_socialCubit == null) {
       return _buildPostsListFromMock();
@@ -151,6 +151,10 @@ class _CommunityPageState extends State<CommunityPage>
           return _buildLoadingSkeleton();
         }
 
+        if (state is GetPostsError) {
+          return _buildPostsListFromMock();
+        }
+
         if (_socialCubit!.posts.isNotEmpty) {
           return Padding(
             padding: const EdgeInsets.only(top: 10),
@@ -159,25 +163,61 @@ class _CommunityPageState extends State<CommunityPage>
               itemCount: _socialCubit!.posts.length,
               itemBuilder: (context, index) {
                 final post = _socialCubit!.posts[index];
+                final hasImage = post.imageUrls.isNotEmpty;
+
+                // تحويل الـ createdAt لوقت مقروء
+                String timeAgo = "";
+                if (post.createdAt != null) {
+                  final created = DateTime.tryParse(post.createdAt!);
+                  if (created != null) {
+                    final diff = DateTime.now().difference(created);
+                    if (diff.inMinutes < 60) {
+                      timeAgo = "منذ ${diff.inMinutes} دقيقة";
+                    } else if (diff.inHours < 24) {
+                      timeAgo = "منذ ${diff.inHours} ساعة";
+                    } else {
+                      timeAgo = "منذ ${diff.inDays} يوم";
+                    }
+                  }
+                }
+
+                // الصورة - لو مسارها relative نضيف الـ base URL
+                const baseUrl = "https://iti-final-project.runasp.net/";
+                final imageUrl = hasImage
+                    ? "$baseUrl${post.imageUrls.first}"
+                    : "";
+                final avatarUrl = post.clientPictureUrl != null
+                    ? "$baseUrl${post.clientPictureUrl}"
+                    : "";
+
                 return PostCard(
                   postId: post.id,
-                  providerName: "Service Provider",
-                  providerJob: "Herafy",
-                  timeAgo: "Just now",
+                  providerName: post.clientName ?? "مستخدم",
+                  providerJob: post.isProvider ? "مزود خدمة" : "عميل",
+                  timeAgo: timeAgo,
                   description: post.description ?? post.title,
-                  imageUrl: (post.images != null && post.images!.isNotEmpty)
-                      ? post.images!.first
-                      : "https://picsum.photos/seed/post_${post.id}/400/300",
-                  likesCount: post.reactionsCount,
-                  commentsCount: 0,
-                  isServiceOffer: false,
+                  imageUrl: imageUrl,
+                  avatarUrl: avatarUrl, // ← جديد
+                  likesCount: 0,
+                  commentsCount: post.commentsCount,
+                  isServiceOffer: post.isProvider,
                 );
               },
             ),
           );
         }
 
-        return _buildPostsListFromMock();
+        // مفيش posts خالص - مش mock
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text(
+              "لا توجد منشورات بعد\nكن أول من ينشر!",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ),
+        );
       },
     );
   }
@@ -195,10 +235,11 @@ class _CommunityPageState extends State<CommunityPage>
             providerJob: post["job"],
             timeAgo: post["time"],
             description: post["desc"],
-            imageUrl: post["image"],
+            imageUrl: post["image"] ?? '',
             likesCount: post["likes"],
             commentsCount: post["comments"],
             isServiceOffer: post["isServiceOffer"] ?? false,
+            avatarUrl: '',
           );
         },
       ),

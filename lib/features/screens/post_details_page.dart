@@ -93,7 +93,6 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // هيدر البوست
         ListTile(
           leading: CircleAvatar(
             backgroundColor: Color(AppColors.cardsColor),
@@ -105,7 +104,6 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
           ),
           subtitle: Text("${widget.post.providerJob} • ${widget.post.timeAgo}"),
         ),
-        // وصف كامل
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(
@@ -113,16 +111,20 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
             style: const TextStyle(fontSize: 15, height: 1.5),
           ),
         ),
-        // صورة البوست مع Hero
-        Hero(
-          tag: widget.post.imageUrl,
-          child: Image.network(
-            widget.post.imageUrl,
-            width: double.infinity,
-            fit: BoxFit.fitWidth,
+
+        // ← الحل: شيك على الـ imageUrl قبل ما تعرضه
+        if (widget.post.imageUrl.isNotEmpty)
+          Hero(
+            tag: widget.post.imageUrl,
+            child: Image.network(
+              widget.post.imageUrl,
+              width: double.infinity,
+              fit: BoxFit.fitWidth,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+            ),
           ),
-        ),
-        // تفاعل اللايكات
+
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -194,7 +196,7 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
             final comment = cubit.comments[index];
             return CommentItem(
               userName: comment.userName,
-              content: comment.content,
+              content: comment.Message,
             );
           },
         );
