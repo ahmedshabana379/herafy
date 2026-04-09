@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
 import 'package:herafy/core/components/custom_text_field.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/components/text-field-label.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
@@ -399,11 +400,9 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                           criminalRecordImage: _criminalRecordImage!,
                         );
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("الرجاء اختيار المحافظة والمنطقة"),
-                            backgroundColor: Colors.redAccent,
-                          ),
+                        SnackBarHelper.showErrorSnackBar(
+                          context,
+                          "الرجاء اختيار المحافظة والمنطقة",
                         );
                       }
                     }
@@ -413,25 +412,13 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
               listener: (context, state) {
                 if (state is ProviderRegisterSuccess) {
                   Navigator.pushNamed(context, WaitingApprovePage.routeName);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Center(
-                        child: Text(
-                          'تم إرسال بياناتك للمراجعة، سنقوم بالتواصل معك قريباً',
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      backgroundColor: Color(AppColors.primaryColor),
-                    ),
+                  SnackBarHelper.showSuccessSnackBar(
+                    context,
+                    'تم إرسال بياناتك للمراجعة، سنقوم بالتواصل معك قريباً',
                   );
                 }
                 if (state is ProviderRegisterError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Center(child: Text(state.message)),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
+                  SnackBarHelper.showErrorSnackBar(context, state.message);
                 }
               },
             ),

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
 import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
@@ -44,12 +45,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (images.isNotEmpty) {
       final availableSlots = 3 - _selectedImages.length;
       if (availableSlots <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("الحد الأقصى 3 صور فقط"),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        SnackBarHelper.showErrorSnackBar(context, "الحد الأقصى 3 صور فقط");
         return;
       }
 
@@ -61,12 +57,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       });
 
       if (pickedFiles.length > filesToAdd.length) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("تم إضافة أول 3 صور فقط"),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        SnackBarHelper.showWarningSnackBar(context, "تم إضافة أول 3 صور فقط");
       }
     }
   }
@@ -107,20 +98,13 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
           BlocConsumer<SocialCubit, SocialState>(
             listener: (context, state) {
               if (state is CreatePostSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("تم نشر المنشور بنجاح"),
-                    backgroundColor: Colors.green,
-                  ),
+                SnackBarHelper.showSuccessSnackBar(
+                  context,
+                  "تم نشر المنشور بنجاح",
                 );
                 Navigator.pop(context);
               } else if (state is CreatePostError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.error),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
+                SnackBarHelper.showErrorSnackBar(context, state.error);
               }
             },
             builder: (context, state) {
@@ -135,13 +119,9 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       ? null
                       : () {
                           if (socialCubit == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Post service is not initialized yet",
-                                ),
-                                backgroundColor: Colors.redAccent,
-                              ),
+                            SnackBarHelper.showErrorSnackBar(
+                              context,
+                              "Post service is not initialized yet",
                             );
                             return;
                           }

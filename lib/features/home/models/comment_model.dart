@@ -16,12 +16,23 @@ class CommentModel {
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
+    String name = json['clientName'] ??
+        json['userName'] ??
+        json['authorName'] ??
+        json['fullName'] ??
+        json['name'] ??
+        'مستخدم';
+
+    if (name.trim().isEmpty || name.trim().toLowerCase() == 'user') {
+      name = 'مستخدم';
+    }
+
     return CommentModel(
-      id: json['id'],
-      Message: json['message'] ?? '',
-      postId: json['postId'],
-      userName: json['userName'] ?? 'User',
-      userImage: json['userImage'],
+      id: json['id'] ?? 0,
+      Message: json['message'] ?? json['Message'] ?? '',
+      postId: json['postId'] ?? 0,
+      userName: name,
+      userImage: json['clientPictureUrl'] ?? json['userImage'],
       reactionsCount: json['reactionsCount'] ?? 0,
     );
   }

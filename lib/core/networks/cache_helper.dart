@@ -28,8 +28,7 @@ class CacheHelper {
   static Future<void> saveUserData(UserModel user) async {
     try {
       await storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   // get user data
@@ -59,8 +58,7 @@ class CacheHelper {
       };
       await storage.write(key: 'provider_step1_data', value: jsonEncode(data));
       await storage.write(key: 'provider_needs_completion', value: 'true');
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   // Get provider registration step 1 data
@@ -91,16 +89,14 @@ class CacheHelper {
     try {
       await storage.delete(key: 'provider_step1_data');
       await storage.delete(key: 'provider_needs_completion');
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   // Save provider registration progress
   static Future<void> saveProviderProgress(double progress) async {
     try {
       await storage.write(key: 'provider_progress', value: progress.toString());
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   // Get provider registration progress
@@ -117,8 +113,7 @@ class CacheHelper {
   static Future<void> markProviderProfileCompleted() async {
     try {
       await storage.write(key: 'provider_profile_completed', value: 'true');
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   // Check if provider profile is completed
@@ -135,16 +130,30 @@ class CacheHelper {
   static Future<void> clearAll() async {
     await storage.deleteAll();
   }
-// dismiss approved banner
+
+  // dismiss approved banner
   static const String _approvedBannerDismissed = 'approved_banner_dismissed';
 
-static Future<void> dismissApprovedBanner() async {
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setBool(_approvedBannerDismissed, true);
-}
+  static Future<void> dismissApprovedBanner() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_approvedBannerDismissed, true);
+  }
 
-static Future<bool> isApprovedBannerDismissed() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getBool(_approvedBannerDismissed) ?? false;
-}
+  static Future<bool> isApprovedBannerDismissed() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_approvedBannerDismissed) ?? false;
+  }
+
+  // Theme mode
+  static const String _themeMode = 'theme_mode';
+
+  static Future<void> setThemeMode(bool isDarkMode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_themeMode, isDarkMode);
+  }
+
+  static Future<bool> getThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_themeMode) ?? false;
+  }
 }

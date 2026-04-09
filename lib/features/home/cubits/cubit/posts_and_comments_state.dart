@@ -46,3 +46,5 @@ class ReactToCommentError extends SocialState {
   final String error;
   ReactToCommentError(this.error);
 }
+
+class GetPostsLoadingMore extends SocialState {}

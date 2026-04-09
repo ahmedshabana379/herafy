@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
 import 'package:herafy/core/networks/end_points.dart';
 import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
@@ -14,41 +15,79 @@ class SocialCubit extends Cubit<SocialState> {
 
   List<PostModel> posts = [];
   List<CommentModel> comments = [];
+  int _currentPage = 1;
+  bool _hasMore = true;
+  bool _isFetchingMore = false;
 
   // 1. جلب المنشورات
   Future<void> getPosts({bool isRefresh = false}) async {
     if (!isRefresh) {
       emit(GetPostsLoading());
+      _currentPage = 1;
+      _hasMore = true;
     }
     try {
       final response = await DioHelper.getRequest(
         endPoint: AppEndPoints.getRecentPosts,
-        query: {
-          // ← أضف ده
-          "pageIndex": 1,
-          "pageSize": 10,
-        },
+        query: {"pageIndex": _currentPage, "pageSize": 10},
       );
 
       final dynamic payload = response.data;
       List rawList = [];
+      int totalCount = 0;
 
       if (payload is Map<String, dynamic>) {
-        final nested = payload['data'];
-        if (nested is List) rawList = nested;
-      } else if (payload is List) {
-        rawList = payload;
+        rawList = payload['data'] ?? [];
+        totalCount = payload['count'] ?? 0;
       }
 
-      posts = rawList.map((e) {
-        print("POST ITEM: $e"); // ← أضف ده
-        return PostModel.fromJson(e);
-      }).toList();
-      posts = rawList.map((e) => PostModel.fromJson(e)).toList();
+      final newPosts = rawList.map((e) => PostModel.fromJson(e)).toList();
+
+      if (isRefresh) {
+        posts = newPosts;
+      } else {
+        posts = newPosts;
+      }
+
+      _hasMore = posts.length < totalCount;
+
       emit(GetPostsSuccess());
     } catch (error) {
-      print("POSTS ERROR: $error");
       emit(GetPostsError(error.toString()));
+    }
+  }
+
+  Future<void> loadMorePosts() async {
+    if (_isFetchingMore || !_hasMore) return;
+    _isFetchingMore = true;
+    emit(GetPostsLoadingMore());
+
+    try {
+      _currentPage++;
+      final response = await DioHelper.getRequest(
+        endPoint: AppEndPoints.getRecentPosts,
+        query: {"pageIndex": _currentPage, "pageSize": 10},
+      );
+
+      final dynamic payload = response.data;
+      List rawList = [];
+      int totalCount = 0;
+
+      if (payload is Map<String, dynamic>) {
+        rawList = payload['data'] ?? [];
+        totalCount = payload['count'] ?? 0;
+      }
+
+      final newPosts = rawList.map((e) => PostModel.fromJson(e)).toList();
+      posts.addAll(newPosts);
+      _hasMore = posts.length < totalCount;
+
+      emit(GetPostsSuccess());
+    } catch (error) {
+      _currentPage--;
+      emit(GetPostsError(error.toString()));
+    } finally {
+      _isFetchingMore = false;
     }
   }
 
@@ -120,7 +159,7 @@ class SocialCubit extends Cubit<SocialState> {
     try {
       final response = await DioHelper.getRequest(
         endPoint:
-            "${AppEndPoints.getPostComments}$postId", // دمج الـ ID في الـ URL
+            "${AppEndPoints.getPostComments}$postId",
       );
       final dynamic payload = response.data;
       List rawList = [];
@@ -135,8 +174,9 @@ class SocialCubit extends Cubit<SocialState> {
         if (nested is List) rawList = nested;
       }
 
-      comments = rawList.map((e) => CommentModel.fromJson(e)).toList();
-
+      comments = rawList.map((e) {
+        return CommentModel.fromJson(e);
+      }).toList();
       emit(GetCommentsSuccess());
     } catch (error) {
       emit(GetCommentsError(error.toString()));
@@ -152,12 +192,21 @@ class SocialCubit extends Cubit<SocialState> {
         emit(AddCommentError("Comment cannot be empty"));
         return;
       }
-      // تحديث واجهة المستخدم فوراً (Optimistic Update)
+
+      final user = await CacheHelper.getUserData();
+      String userName = user != null && user.fullName.trim().isNotEmpty
+          ? user.fullName
+          : "مستخدم";
+          
+      if (userName.trim().toLowerCase() == 'user') {
+        userName = "مستخدم";
+      }
+
       final tempComment = CommentModel(
         Message: text,
         id: DateTime.now().millisecondsSinceEpoch,
         postId: postId,
-        userName: "أنا", // اسم مبدئي
+        userName: userName,
       );
       comments.add(tempComment);
       emit(GetCommentsSuccess());
@@ -170,7 +219,6 @@ class SocialCubit extends Cubit<SocialState> {
       emit(AddCommentSuccess());
     } catch (error) {
       if (error is DioException) {
-      
         final data = error.response?.data;
         String message = "Failed to add comment";
         if (data is Map && data['message'] != null) {

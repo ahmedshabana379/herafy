@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
 import 'package:herafy/core/components/custom_text_field.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/components/text-field-label.dart';
-import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:herafy/features/auth/screens/login.dart';
@@ -187,20 +187,13 @@ class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
               },
               listener: (context, state) {
                 if (state is RegisterSuccess) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Center(child: Text('تم إنشاء الحساب بنجاح!')),
-                      backgroundColor: Color(AppColors.primaryColor),
-                    ),
+                  SnackBarHelper.showSuccessSnackBar(
+                    context,
+                    'تم إنشاء الحساب بنجاح!',
                   );
                   Navigator.pushReplacementNamed(context, LoginPage.routeName);
                 } else if (state is RegisterError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Center(child: Text(state.message)),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  SnackBarHelper.showErrorSnackBar(context, state.message);
                 }
               },
             ),

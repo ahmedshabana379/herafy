@@ -49,7 +49,6 @@ class _PostCardState extends State<PostCard> {
             postId: widget.postId,
             isInitialLiked: isLiked,
             initialLikesCount: likesCount,
-            // كول باك لتحديث الحالة في الكارت لما يرجع من الصفحة
             onBack: (newLiked, newCount) {
               setState(() {
                 isLiked = newLiked;
@@ -76,8 +75,8 @@ class _PostCardState extends State<PostCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
-            _buildImage(),
             _buildDescription(),
+            _buildImage(),
             _buildActions(),
           ],
         ),
@@ -147,7 +146,7 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget _buildImage() {
-    if (widget.imageUrl.isEmpty) return const SizedBox.shrink(); // ← مفيش صورة
+    if (widget.imageUrl.isEmpty) return const SizedBox.shrink(); 
 
     return Hero(
       tag: widget.imageUrl,
@@ -202,7 +201,8 @@ class _PostCardState extends State<PostCard> {
             label: "${widget.commentsCount}",
             color: Colors.grey.shade600,
             onTap: () {
-              /* بتفتح الصفحة تلقائياً من الـ GestureDetector */
+              // ممكن نضيف كول باك لفتح صفحة التعليقات مباشرة
+              
             },
           ),
           const Spacer(),

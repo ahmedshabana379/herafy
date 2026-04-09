@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
@@ -49,17 +50,6 @@ class ClientDrawer extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
                   child: Divider(color: Color(0xFFEEEEEE)),
                 ),
-
-                _buildMenuItem(
-                  icon: Icons.palette_outlined,
-                  title: "مظهر التطبيق",
-                  trailing: Switch(
-                    value: false,
-                    onChanged: (val) {},
-                    activeThumbColor: Color(AppColors.primaryColor),
-                  ),
-                  onTap: () {},
-                ),
               ],
             ),
           ),
@@ -76,7 +66,6 @@ class ClientDrawer extends StatelessWidget {
     return BlocBuilder<AuthCubit, AuthState>(
       builder: (context, state) {
         final user = context.read<AuthCubit>().currentUser;
-        final displayName = user?.fullName ?? "المستخدم";
         final displayEmail = user?.email ?? "";
         final isProvider = user?.isProvider ?? false;
 
@@ -174,12 +163,7 @@ class ClientDrawer extends StatelessWidget {
             (route) => false,
           );
         } else if (state is LogoutError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          SnackBarHelper.showErrorSnackBar(context, state.message);
         }
       },
       child: Padding(
@@ -248,6 +232,7 @@ class ClientDrawer extends StatelessWidget {
           fontSize: 14,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.3,
+          fontFamily: 'Cairo',
         ),
       ),
       trailing: trailing,

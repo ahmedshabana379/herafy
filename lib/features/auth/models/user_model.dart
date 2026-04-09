@@ -10,7 +10,7 @@ class UserModel {
   final int
   status; // 0=Pending, 1=UnderReview, 2=Approved, 3=Rejected, 4=Suspended, 5=Completed
   final bool? isProviderFromServer;
-
+ 
   UserModel({
     this.firstName,
     this.lastName,

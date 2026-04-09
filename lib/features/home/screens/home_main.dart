@@ -49,7 +49,6 @@ class _HomePageState extends State<HomePage> {
         _approvedBannerDismissed = dismissed;
       });
     } catch (e) {
-      print('Error loading user data: $e');
     }
   }
 

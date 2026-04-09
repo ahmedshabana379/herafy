@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
 import 'package:herafy/core/components/custom_text_field.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/components/text-field-label.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
@@ -201,11 +202,9 @@ class _LoginPageState extends State<LoginPage> {
                           HomePage.routeName,
                         );
                       } else if (state is LoginError) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Center(child: Text(state.message)),
-                            backgroundColor: Colors.redAccent,
-                          ),
+                        SnackBarHelper.showErrorSnackBar(
+                          context,
+                          state.message,
                         );
                       }
                     },

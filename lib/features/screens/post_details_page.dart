@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
 import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
@@ -242,12 +243,7 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
               if (state is AddCommentSuccess) {
                 _commentController.clear();
               } else if (state is AddCommentError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.error),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
+                SnackBarHelper.showErrorSnackBar(context, state.error);
               }
             },
             builder: (context, state) {
@@ -283,4 +279,3 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
   }
 }
 
-// ويدجيت التعليق (الريوزبل)

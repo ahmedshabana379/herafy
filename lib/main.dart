@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
+import 'package:herafy/core/resourses/app_theme.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/screens/customer/customer_register_page.dart';
 import 'package:herafy/features/auth/screens/login.dart';
@@ -86,24 +87,24 @@ class _HerafyAppState extends State<HerafyApp> {
             BlocProvider<SocialCubit>(create: (_) => SocialCubit()),
           ],
           child: MaterialApp(
-              routes: {
-                RoleSelectionPage.routeName: (context) =>
-                    const RoleSelectionPage(),
-                LoginPage.routeName: (context) => const LoginPage(),
-                CustomerRegisterPage.routeName: (context) =>
-                    const CustomerRegisterPage(),
-                ProviderRegisterPage.routeName: (context) =>
-                    const ProviderRegisterPage(),
-                WaitingApprovePage.routeName: (context) =>
-                    const WaitingApprovePage(),
-                HomePage.routeName: (context) => const HomePage(),
-                EditAccountPage.routeName: (context) => const EditAccountPage(),
-                CreatePostScreen.routeName: (context) =>
-                    const CreatePostScreen(),
-              },
-              debugShowCheckedModeBanner: false,
-              initialRoute: snapshot.data ?? LoginPage.routeName,
-            ),
+            routes: {
+              RoleSelectionPage.routeName: (context) =>
+                  const RoleSelectionPage(),
+              LoginPage.routeName: (context) => const LoginPage(),
+              CustomerRegisterPage.routeName: (context) =>
+                  const CustomerRegisterPage(),
+              ProviderRegisterPage.routeName: (context) =>
+                  const ProviderRegisterPage(),
+              WaitingApprovePage.routeName: (context) =>
+                  const WaitingApprovePage(),
+              HomePage.routeName: (context) => const HomePage(),
+              EditAccountPage.routeName: (context) => const EditAccountPage(),
+              CreatePostScreen.routeName: (context) => const CreatePostScreen(),
+            },
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            initialRoute: snapshot.data ?? LoginPage.routeName,
+          ),
         );
       },
     );

@@ -2,6 +2,7 @@ import 'dart:io'; // مهم عشان ملفات الصور
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:image_picker/image_picker.dart'; // تأكد من وجودها في pubspec
 import 'package:herafy/core/components/custom_text_field.dart';
@@ -209,21 +210,12 @@ class _EditAccountPageState extends State<EditAccountPage> {
             _oldPasswordController.clear();
             _newPasswordController.clear();
             _confirmPasswordController.clear();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Center(
-                  child: Text('تم تغيير كلمة المرور بنجاح'),
-                ),
-                backgroundColor: Colors.green,
-              ),
+            SnackBarHelper.showSuccessSnackBar(
+              context,
+              'تم تغيير كلمة المرور بنجاح',
             );
           } else if (state is ChangePasswordError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Center(child: Text(state.message)),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
+            SnackBarHelper.showErrorSnackBar(context, state.message);
           }
         },
         child: Form(
