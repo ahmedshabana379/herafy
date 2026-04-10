@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
 import 'package:herafy/core/networks/end_points.dart';
-import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
+import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_state.dart';
 import 'package:herafy/features/home/models/comment_model.dart';
 import 'package:herafy/features/home/models/post_models.dart'; // تأكد من المسار
 

@@ -48,8 +48,7 @@ class _HomePageState extends State<HomePage> {
         _user = userData;
         _approvedBannerDismissed = dismissed;
       });
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   @override
@@ -63,11 +62,12 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final isProvider = _user?.isProvider == true;
     final int status = _user?.status ?? 0;
+    final bool isProfileComplete = _user?.isProfileComplete ?? false;
 
     final showCompleteProfileCta = isProvider && status == 0;
     final showWaitingApprovalCta = isProvider && status == 1;
     final showApprovedCta =
-        isProvider && status == 2 && !_approvedBannerDismissed; // ← جديد
+        isProvider && status == 2 && !_approvedBannerDismissed;
     final showRejectedCta = isProvider && status == 3;
     final showProviderDashboard = isProvider && status == 2;
 
@@ -119,6 +119,9 @@ class _HomePageState extends State<HomePage> {
       body: Column(
         children: [
           // --- Banners ---
+        
+           
+
           AnimatedContainer(
             duration: Duration(milliseconds: 300),
             height: _isBarVisible && showCompleteProfileCta ? null : 0,

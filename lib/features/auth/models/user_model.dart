@@ -10,7 +10,14 @@ class UserModel {
   final int
   status; // 0=Pending, 1=UnderReview, 2=Approved, 3=Rejected, 4=Suspended, 5=Completed
   final bool? isProviderFromServer;
- 
+  final int? gender; 
+  final String? phoneNumber;
+  final int? governorateId;
+  final int? regionId;
+  final String? birthDate;
+   // الـ ID عشان نبعته في الـ Update
+  final String? governorateName; // للعرض في البروفايل
+  final String? regionName;
   UserModel({
     this.firstName,
     this.lastName,
@@ -21,7 +28,7 @@ class UserModel {
     this.isAuthenticated,
     this.isProfileComplete = false,
     this.status = 0,
-    this.isProviderFromServer,
+    this.isProviderFromServer, this.gender, this.phoneNumber, this.governorateId, this.regionId, this.birthDate, this.governorateName, this.regionName,
   });
 
   bool get isProvider =>
@@ -55,9 +62,18 @@ class UserModel {
       accessToken: json['accessToken'],
       roles: parsedRoles,
       isAuthenticated: json['isAuthenticated'],
-      isProfileComplete: status >= 1,
+      isProfileComplete: status ==5 || json['isProfileComplete'] == false ? false : true, // لو الحالة Completed يبقى البروفايل كامل حتى لو isProfileComplete جاي false
       status: status,
       isProviderFromServer: json['isProvider'],
+      gender: json['gender'],
+      phoneNumber: json['phoneNumber'],
+      governorateId: json['governorateId'],
+      regionId: json['regionId'],
+      birthDate: json['birthDate'],
+      governorateName: json['governorateName'],
+      regionName: json['regionName'],
+    
+
     );
   }
 
@@ -73,6 +89,14 @@ class UserModel {
       'isProfileComplete': isProfileComplete,
       'status': status,
       'isProvider': isProviderFromServer,
+      'gender': gender,
+      'phoneNumber': phoneNumber,
+      'governorateId': governorateId,
+      'regionId': regionId,
+      'birthDate': birthDate,
+      'governorateName': governorateName,
+      'regionName': regionName,
+      
     };
   }
 
@@ -87,6 +111,14 @@ class UserModel {
     bool? isAuthenticated,
     bool? isProfileComplete,
     int? status,
+    int? gender,
+    String? phoneNumber,
+    int? governorateId,
+    int? regionId,
+    String? birthDate,
+    String? governorateName,
+    String? regionName,
+    
   }) {
     return UserModel(
       firstName: firstName ?? this.firstName,
@@ -99,6 +131,13 @@ class UserModel {
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
       status: status ?? this.status,
       isProviderFromServer: isProviderFromServer ?? this.isProviderFromServer,
+      gender: gender ?? this.gender,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      governorateId: governorateId ?? this.governorateId,
+      regionId: regionId ?? this.regionId,
+      birthDate: birthDate ?? this.birthDate,
+      governorateName: governorateName ?? this.governorateName,
+      regionName: regionName ?? this.regionName,
     );
   }
 }

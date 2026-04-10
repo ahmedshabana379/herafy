@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
-import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
-import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
+import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_state.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CreatePostScreen extends StatefulWidget {

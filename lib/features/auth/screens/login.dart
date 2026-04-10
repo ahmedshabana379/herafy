@@ -114,6 +114,8 @@ class _LoginPageState extends State<LoginPage> {
                   TextFieldLabel(title: "البريد الإلكتروني"),
 
                   CustomTextField(
+                    
+                    keyboardType: TextInputType.emailAddress,
                     controller: _emailController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -125,13 +127,13 @@ class _LoginPageState extends State<LoginPage> {
                       }
                       return null;
                     },
-                    isPassword: false,
                     hintText: "example@email.com",
-                    icon: Icons.email_outlined,
+                    icon: Icons.email_outlined, isPassword: false,
                   ),
                   const SizedBox(height: 10),
                   TextFieldLabel(title: "كلمة المرور"),
                   CustomTextField(
+                    keyboardType: TextInputType.text,
                     controller: _passwordController,
                     validator: (value) {
                       if (value == null || value.isEmpty) {

@@ -40,4 +40,17 @@ class AppEndPoints {
   static const String updateProviderProfile =
       "Provider/update-provider-profile";
   static const String uploadDocument = "Document/upload-document";
+  static const String updateClientProfile = "Client/update-client-profile";
+  // ------------------------------
+static const String createServiceRequest = "ServiceRequest/create-service-request";
+static const String getClientServiceRequests = "ServiceRequest/client-requests";
+static const String getProviderAvailableRequests = "ServiceRequest/provider-available-requests";
+static const String getProviderAssignedRequests = "ServiceRequest/provider-assigned-requests";
+static const String assignServiceRequest = "ServiceRequest/assign-request";
+static const String acceptServiceRequest = "ServiceRequest/accept-request";
+static const String setServiceRequestCode = "ServiceRequest/set-code";
+static const String deleteServiceRequest = "ServiceRequest/delete-request";
+static const String createRequestOffer = "RequestOffer/create-offer";
+static const String getRequestOffers = "RequestOffer/get-offers";
+static const String updateRequestOffer = "RequestOffer/update-offer";
 }

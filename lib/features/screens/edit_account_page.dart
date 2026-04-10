@@ -245,7 +245,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
                 icon: Icons.lock_outline,
                 controller: _oldPasswordController,
                 validator: (v) =>
-                    v!.isEmpty ? 'يرجى إدخال كلمة المرور القديمة' : null,
+                    v!.isEmpty ? 'يرجى إدخال كلمة المرور القديمة' : null, keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 16),
               TextFieldLabel(title: "كلمة المرور الجديدة"),
@@ -255,7 +255,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
                 icon: Icons.lock_open,
                 controller: _newPasswordController,
                 validator: (v) =>
-                    v!.length < 6 ? 'كلمة المرور ضعيفة جداً' : null,
+                    v!.length < 6 ? 'كلمة المرور ضعيفة جداً' : null, keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 16),
               TextFieldLabel(title: "تأكيد كلمة المرور"),
@@ -266,7 +266,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
                 controller: _confirmPasswordController,
                 validator: (v) => v != _newPasswordController.text
                     ? 'كلمات المرور غير متطابقة'
-                    : null,
+                    : null, keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 24),
               BlocBuilder<AuthCubit, AuthState>(

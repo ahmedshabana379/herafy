@@ -30,8 +30,8 @@ class SecondRegisterationStep extends StatefulWidget {
 class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
   String? selectedSubCategory;
   String? selectedMainCategory;
-  File? _idCardImage;
   File? _profileImage;
+  File? _idCardImage;
   File? _criminalRecordImage;
   final TextEditingController _rangeController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
@@ -261,6 +261,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
             const SizedBox(height: 10),
             TextFieldLabel(title: "نطاق العمل (كم)"),
             CustomTextField(
+              keyboardType: TextInputType.number,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'الرجاء إدخال نطاق العمل';
@@ -278,6 +279,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
             const SizedBox(height: 10),
             TextFieldLabel(title: "العنوان التفصيلي"),
             CustomTextField(
+              keyboardType: TextInputType.text,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'الرجاء إدخال العنوان التفصيلي';

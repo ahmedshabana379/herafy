@@ -8,7 +8,7 @@ class CustomTextField extends StatefulWidget {
     required this.hintText,
     required this.icon,
     this.controller,
-    this.validator,
+    this.validator, required TextInputType keyboardType,
   });
   final bool isPassword;
   final String hintText;

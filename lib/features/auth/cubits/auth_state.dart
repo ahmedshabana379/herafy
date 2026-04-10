@@ -1,4 +1,5 @@
 import 'package:herafy/core/resourses/constants.dart';
+import 'package:herafy/features/auth/models/user_model.dart';
 
 abstract class AuthState {}
 
@@ -116,3 +117,11 @@ class LogoutError extends AuthState {
 class ProviderApprovedState extends AuthState {}
 class ProviderRejectedState extends AuthState {}
 class ProviderUnderReviewState extends AuthState {}
+
+// Update Profile States
+class UpdateProfileLoading extends AuthState {}
+class UpdateProfileSuccess extends AuthState {}
+class UpdateProfileError extends AuthState {
+  final String message;
+  UpdateProfileError(this.message);
+}

@@ -65,7 +65,7 @@ class _PostCardState extends State<PostCard> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withOpacity(0.16),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -146,7 +146,7 @@ class _PostCardState extends State<PostCard> {
   }
 
   Widget _buildImage() {
-    if (widget.imageUrl.isEmpty) return const SizedBox.shrink(); 
+    if (widget.imageUrl.isEmpty) return const SizedBox.shrink();
 
     return Hero(
       tag: widget.imageUrl,
@@ -202,7 +202,6 @@ class _PostCardState extends State<PostCard> {
             color: Colors.grey.shade600,
             onTap: () {
               // ممكن نضيف كول باك لفتح صفحة التعليقات مباشرة
-              
             },
           ),
           const Spacer(),
@@ -241,7 +240,6 @@ class _PostCardState extends State<PostCard> {
   }
 }
 
-// ريوزبل ويدجيت للأزرار
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;

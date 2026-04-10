@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
-import 'package:herafy/features/home/cubits/cubit/posts_and_comments_state.dart';
+import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_state.dart';
 import 'package:herafy/features/screens/widgets/post_card.dart';
 
 class CommunityPage extends StatefulWidget {
@@ -178,6 +178,7 @@ class _CommunityPageState extends State<CommunityPage>
                   : "";
 
               return PostCard(
+
                 postId: post.id,
                 providerName: post.clientName ?? "مستخدم",
                 providerJob: post.isProvider ? "مزود خدمة" : "عميل",

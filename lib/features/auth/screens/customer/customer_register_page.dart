@@ -115,6 +115,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                             children: [
                               const TextFieldLabel(title: " إسم العائلة"),
                               CustomTextField(
+                                keyboardType: TextInputType.text,
                                 isPassword: false,
                                 hintText: "مثلاً: محمد",
                                 icon: Icons.person_outline,
@@ -132,6 +133,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                             children: [
                               const TextFieldLabel(title: "الإسم الأول"),
                               CustomTextField(
+                                keyboardType: TextInputType.text,
                                 isPassword: false,
                                 hintText: "مثلاً: أحمد",
                                 icon: Icons.people_outline,
@@ -147,6 +149,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                     const SizedBox(height: 10),
                     TextFieldLabel(title: "البريد الإلكتروني"),
                     CustomTextField(
+                      keyboardType: TextInputType.emailAddress,
                       controller: _emailController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -165,6 +168,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                     const SizedBox(height: 10),
                     TextFieldLabel(title: "كلمة المرور"),
                     CustomTextField(
+                      keyboardType: TextInputType.text,
                       controller: _passwordController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -182,6 +186,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                     const SizedBox(height: 10),
                     TextFieldLabel(title: "تأكيد كلمة المرور"),
                     CustomTextField(
+                      keyboardType: TextInputType.text,
                       controller: _confirmPasswordController,
                       validator: (value) {
                         if (value == null || value.isEmpty) {

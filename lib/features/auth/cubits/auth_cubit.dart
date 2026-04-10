@@ -307,20 +307,99 @@ class AuthCubit extends Cubit<AuthState> {
 
     // check provider status after fetching services (in case user is provider and we need to show them the status)
     void checkProviderStatus() async {
-  final user = _currentUser ?? await CacheHelper.getUserData();
-  if (user == null || !user.isProvider) return;
+      final user = _currentUser ?? await CacheHelper.getUserData();
+      if (user == null || !user.isProvider) return;
 
-  switch (user.status) {
-    case 1:
-      emit(ProviderUnderReviewState());
-      break;
-    case 2:
-      emit(ProviderApprovedState());
-      break;
-    case 3:
-      emit(ProviderRejectedState());
-      break;
+      switch (user.status) {
+        case 1:
+          emit(ProviderUnderReviewState());
+          break;
+        case 2:
+          emit(ProviderApprovedState());
+          break;
+        case 3:
+          emit(ProviderRejectedState());
+          break;
+      }
+    }
+  }
+
+Future<void> updateUserProfile({
+  required String firstName,
+  required String lastName,
+  required String phoneNumber,
+  required int gender,
+  required int governorateId,
+  required int regionId,
+  File? profileImage,
+  DateTime? birthDate,
+}) async {
+  emit(UpdateProfileLoading());
+  try {
+    // لو فيه صورة نبعت FormData، غير كده JSON
+    if (profileImage != null) {
+      FormData formData = FormData.fromMap({
+        "FirstName": firstName,
+        "LastName": lastName,
+        "PhoneNumber": phoneNumber,
+        "Gender": gender,
+        "GovernorateId": governorateId,
+        "RegionId": regionId,
+        if (birthDate != null) "BirthDate": birthDate.toIso8601String(),
+        "ProfileImage": await MultipartFile.fromFile(
+          profileImage.path,
+          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+      });
+
+      await DioHelper.putRequest(
+        endPoint: AppEndPoints.updateClientProfile,
+        data: formData,
+      );
+    } else {
+      await DioHelper.putRequest(
+        endPoint: AppEndPoints.updateClientProfile,
+        data: {
+          "FirstName": firstName,
+          "LastName": lastName,
+          "PhoneNumber": phoneNumber,
+          "Gender": gender,
+          "GovernorateId": governorateId,
+          "RegionId": regionId,
+          if (birthDate != null) "BirthDate": birthDate.toIso8601String(),
+        },
+      );
+    }
+
+    // تحديث الـ cache بالبيانات الجديدة
+    if (_currentUser != null) {
+      final updatedUser = _currentUser!.copyWith(
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+        gender: gender,
+        governorateId: governorateId,
+        regionId: regionId,
+        isProfileComplete: true,
+        status: _currentUser!.status == 0 ? 5 : _currentUser!.status,
+      );
+      await CacheHelper.saveUserData(updatedUser);
+      _currentUser = updatedUser;
+    }
+
+    emit(UpdateProfileSuccess());
+  } on DioException catch (e) {
+    final data = e.response?.data;
+    String message = "فشل تحديث البيانات";
+    if (data is Map && data['message'] != null) {
+      message = data['message'].toString();
+    } else if (data is String && data.isNotEmpty) {
+      message = data;
+    }
+    emit(UpdateProfileError(message));
+  } catch (e) {
+    emit(UpdateProfileError("حدث خطأ غير متوقع"));
   }
 }
-  }
+
 }

@@ -9,7 +9,8 @@ import 'package:herafy/features/auth/screens/login.dart';
 import 'package:herafy/features/auth/screens/role_selection.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
-import 'package:herafy/features/home/cubits/cubit/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_cubit.dart';
+import 'package:herafy/features/screens/complete_data.dart';
 import 'package:herafy/features/screens/create_post_screen.dart';
 import 'package:herafy/features/screens/edit_account_page.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
@@ -39,19 +40,22 @@ class _HerafyAppState extends State<HerafyApp> {
   }
 
   Future<String> _determineInitialRoute() async {
-    try {
-      // Load user data
-      await _authCubit.loadUserData();
+  try {
+    await _authCubit.loadUserData();
+    final token = await CacheHelper.getToken();
+    final user = _authCubit.currentUser;
 
-      final token = await CacheHelper.getToken();
-      if (token != null && token.isNotEmpty) {
-        return HomePage.routeName;
+    if (token != null && token.isNotEmpty && user != null) {
+      if (user.status == 0) {
+        return CompleteDataScreen.routeName;
       }
-    } catch (e) {
-      print('Error checking token: $e');
+      return HomePage.routeName;
     }
-    return LoginPage.routeName;
+  } catch (e) {
+    debugPrint('Error: $e');
   }
+  return LoginPage.routeName;
+}
 
   @override
   void dispose() {
@@ -100,6 +104,8 @@ class _HerafyAppState extends State<HerafyApp> {
               HomePage.routeName: (context) => const HomePage(),
               EditAccountPage.routeName: (context) => const EditAccountPage(),
               CreatePostScreen.routeName: (context) => const CreatePostScreen(),
+              CompleteDataScreen.routeName: (context) =>
+                  const CompleteDataScreen(),
             },
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,

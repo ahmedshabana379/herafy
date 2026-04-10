@@ -54,21 +54,46 @@ class DioHelper {
     return await dio!.post(endPoint, data: data, queryParameters: query);
   }
 
-  static Future<Response> putRequest({
+ static Future<Response> putRequest({
+    required String endPoint,
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    await _setAuthHeader(); // ضروري عشان التوكن
+
+    // هندلة الـ Content-Type لو فيه صور أو ملفات
+    if (data is FormData) {
+      dio!.options.headers.remove('Content-Type');
+    } else {
+      dio!.options.headers['Content-Type'] = 'application/json';
+    }
+
+    return await dio!.put(
+      endPoint,
+      data: data,
+      queryParameters: queryParameters,
+    );
+  }
+
+  static Future<Response> patchRequest({
+    required String endPoint,
+    dynamic data,
+  }) async {
+    await _setAuthHeader(); // ضروري عشان التوكن
+
+    if (data is FormData) {
+      dio!.options.headers.remove('Content-Type');
+    } else {
+      dio!.options.headers['Content-Type'] = 'application/json';
+    }
+
+    return await dio!.patch(endPoint, data: data);
+  }
+  static Future<Response> deleteRequest({
   required String endPoint,
-  dynamic data,
   Map<String, dynamic>? queryParameters,
 }) async {
-  return await dio!.put(
-    endPoint,
-    data: data,
-    queryParameters: queryParameters,
-  );
-}
-static Future<Response> patchRequest({
-  required String endPoint,
-  dynamic data,
-}) async {
-  return await dio!.patch(endPoint, data: data);
+  await _setAuthHeader();
+  return await dio!.delete(endPoint, queryParameters: queryParameters);
 }
 }
