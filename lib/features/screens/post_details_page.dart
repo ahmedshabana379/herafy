@@ -13,6 +13,7 @@ class PostDetailsPage extends StatefulWidget {
   final bool isInitialLiked;
   final int initialLikesCount;
   final Function(bool, int) onBack; // لتحديث الكارت عند الرجوع
+  final int? initialReactionType;
 
   const PostDetailsPage({
     super.key,
@@ -20,7 +21,7 @@ class PostDetailsPage extends StatefulWidget {
     required this.postId,
     required this.isInitialLiked,
     required this.initialLikesCount,
-    required this.onBack,
+    required this.onBack, this.initialReactionType,
   });
 
   @override
@@ -37,6 +38,7 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
     super.initState();
     isLiked = widget.isInitialLiked;
     likesCount = widget.initialLikesCount;
+    myReaction = widget.initialReactionType; 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.postId > 0) {
         context.read<SocialCubit>().getComments(widget.postId);
@@ -91,13 +93,25 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
   }
 
   Widget _buildFullPostContent() {
+    const baseUrl = "https://iti-final-project.runasp.net/";
+    final avatarUrl = widget.post.avatarUrl.isNotEmpty
+        ? widget.post.avatarUrl
+        : "";
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ListTile(
           leading: CircleAvatar(
+            radius: 22,
             backgroundColor: Color(AppColors.cardsColor),
-            child: Icon(Icons.person, color: Color(AppColors.primaryColor)),
+            backgroundImage: avatarUrl.isNotEmpty
+                ? NetworkImage(avatarUrl)
+                : null,
+            onBackgroundImageError: avatarUrl.isNotEmpty ? (_, __) {} : null,
+            child: avatarUrl.isEmpty
+                ? Icon(Icons.person, color: Color(AppColors.primaryColor))
+                : null,
           ),
           title: Text(
             widget.post.providerName,
@@ -112,8 +126,6 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
             style: const TextStyle(fontSize: 15, height: 1.5),
           ),
         ),
-
-        // ← الحل: شيك على الـ imageUrl قبل ما تعرضه
         if (widget.post.imageUrl.isNotEmpty)
           Hero(
             tag: widget.post.imageUrl,
@@ -121,8 +133,101 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
               widget.post.imageUrl,
               width: double.infinity,
               fit: BoxFit.fitWidth,
-              errorBuilder: (context, error, stackTrace) =>
-                  const SizedBox.shrink(),
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+          ),
+
+        // Reactions row
+        _buildReactionsRow(),
+      ],
+    );
+  }
+
+  // أضف الـ state variables في _PostDetailsPageState
+  bool _showReactions = false;
+  int? myReaction;
+
+  static const Map<int, String> _reactionEmojis = {
+    1: "👍",
+    2: "❤️",
+    3: "😂",
+    4: "😡",
+    5: "😢",
+  };
+  static const Map<int, String> _reactionLabels = {
+    1: "إعجاب",
+    2: "حب",
+    3: "ضحك",
+    4: "غضب",
+    5: "حزن",
+  };
+  static const Map<int, Color> _reactionColors = {
+    1: Colors.blue,
+    2: Colors.red,
+    3: Colors.amber,
+    4: Colors.orange,
+    5: Colors.blue,
+  };
+
+  Widget _buildReactionsRow() {
+    final reactionEmoji = myReaction != null
+        ? _reactionEmojis[myReaction]
+        : null;
+    final reactionColor = myReaction != null
+        ? _reactionColors[myReaction]!
+        : Colors.grey;
+    final reactionLabel = myReaction != null
+        ? _reactionLabels[myReaction]!
+        : "إعجاب";
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_showReactions)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: _reactionEmojis.entries.map((e) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (myReaction == e.key) {
+                          myReaction = null;
+                          likesCount--;
+                        } else {
+                          if (myReaction == null) likesCount++;
+                          myReaction = e.key;
+                        }
+                        _showReactions = false;
+                      });
+                      context.read<SocialCubit>().reactToPost(
+                        postId: widget.postId,
+                        reactionType: e.key,
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Text(
+                        e.value,
+                        style: const TextStyle(fontSize: 26),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
 
@@ -131,19 +236,47 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
           child: Row(
             children: [
               GestureDetector(
-                onTap: () => setState(() {
-                  isLiked = !isLiked;
-                  likesCount += isLiked ? 1 : -1;
-                }),
-                child: Icon(
-                  isLiked ? Icons.favorite : Icons.favorite_border,
-                  color: isLiked ? Colors.red : Colors.grey,
+                onLongPress: () =>
+                    setState(() => _showReactions = !_showReactions),
+                onTap: () {
+                  setState(() {
+                    if (myReaction != null) {
+                      myReaction = null;
+                      likesCount--;
+                    } else {
+                      myReaction = 1;
+                      likesCount++;
+                    }
+                  });
+                  context.read<SocialCubit>().reactToPost(
+                    postId: widget.postId,
+                    reactionType: myReaction ?? 1,
+                  );
+                },
+                child: Row(
+                  children: [
+                    reactionEmoji != null
+                        ? Text(
+                            reactionEmoji,
+                            style: const TextStyle(fontSize: 22),
+                          )
+                        : Icon(
+                            Icons.thumb_up_outlined,
+                            size: 22,
+                            color: reactionColor,
+                          ),
+                    const SizedBox(width: 8),
+                    Text(
+                      likesCount > 0
+                          ? "$likesCount $reactionLabel"
+                          : reactionLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: reactionColor,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "$likesCount لايك",
-                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -196,8 +329,11 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
           itemBuilder: (context, index) {
             final comment = cubit.comments[index];
             return CommentItem(
+              commentId: comment.id,
+              userImage: comment.userImage,
               userName: comment.userName,
               content: comment.Message,
+              reactionsCount: comment.reactionsCount,
             );
           },
         );
@@ -278,4 +414,3 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
     );
   }
 }
-

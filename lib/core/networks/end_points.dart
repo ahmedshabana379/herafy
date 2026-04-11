@@ -53,4 +53,6 @@ static const String deleteServiceRequest = "ServiceRequest/delete-request";
 static const String createRequestOffer = "RequestOffer/create-offer";
 static const String getRequestOffers = "RequestOffer/get-offers";
 static const String updateRequestOffer = "RequestOffer/update-offer";
+static const String getPostReactions = "PostReaction/post-reactions/";
+static const String getCommentReactions = "CommentReaction/comment-reactions/";
 }

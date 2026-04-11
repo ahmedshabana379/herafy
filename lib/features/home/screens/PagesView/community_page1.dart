@@ -111,6 +111,8 @@ class _CommunityPageState extends State<CommunityPage>
                   likesCount: 0,
                   commentsCount: post.commentsCount,
                   isServiceOffer: post.isProvider,
+                  isReacted: post.isReacted,
+                  topReactions: post.topReactions,
                 );
               },
             ),
@@ -178,7 +180,6 @@ class _CommunityPageState extends State<CommunityPage>
                   : "";
 
               return PostCard(
-
                 postId: post.id,
                 providerName: post.clientName ?? "مستخدم",
                 providerJob: post.isProvider ? "مزود خدمة" : "عميل",
@@ -189,6 +190,8 @@ class _CommunityPageState extends State<CommunityPage>
                 likesCount: 0,
                 commentsCount: post.commentsCount,
                 isServiceOffer: post.isProvider,
+                topReactions: post.topReactions,
+                isReacted: post.isReacted,
               );
             },
           );
