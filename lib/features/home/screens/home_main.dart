@@ -5,9 +5,9 @@ import 'package:herafy/features/auth/models/user_model.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/home/screens/PagesView/community_page1.dart';
 import 'package:herafy/features/home/screens/PagesView/drawers/client_drawer.dart';
-import 'package:herafy/features/home/screens/PagesView/offers_page.dart';
+import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/offers_page.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/pages/provider_dashboard_page.dart';
-import 'package:herafy/features/home/screens/PagesView/quick_request_page.dart';
+import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/quick_request_page.dart';
 import 'package:herafy/features/home/widgets/bar_of_tapbar_buttons.dart';
 import 'package:herafy/features/home/widgets/post_type_sheet.dart';
 

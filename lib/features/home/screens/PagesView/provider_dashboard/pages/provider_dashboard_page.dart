@@ -6,7 +6,7 @@ import 'package:herafy/features/home/models/request_offer_model.dart';
 import 'package:herafy/features/home/models/service_request_model.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/request_card.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/offer_dialog.dart';
-import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/track_request_map.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/view_request_map.dart';
 
 class ProviderDashboardPage extends StatefulWidget {
   const ProviderDashboardPage({super.key});

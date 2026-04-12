@@ -93,7 +93,6 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
   }
 
   Widget _buildFullPostContent() {
-    const baseUrl = "https://iti-final-project.runasp.net/";
     final avatarUrl = widget.post.avatarUrl.isNotEmpty
         ? widget.post.avatarUrl
         : "";
