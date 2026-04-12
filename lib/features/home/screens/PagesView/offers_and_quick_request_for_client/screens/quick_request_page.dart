@@ -4,12 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/widgets/map_picker_screen.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:geocoding/geocoding.dart';
 
 class QuickRequestPage extends StatefulWidget {
   const QuickRequestPage({super.key, this.scrollController});
   final ScrollController? scrollController;
-
+  static const String routeName = "/quick_request_page";
   @override
   State<QuickRequestPage> createState() => _QuickRequestPageState();
 }
@@ -23,16 +22,16 @@ class _QuickRequestPageState extends State<QuickRequestPage>
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _budgetController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
-  
+
   // Variables
   String? selectedService;
   String _searchQuery = '';
-  
+
   // Location variables (يحددها المستخدم من الخريطة)
   double? _selectedLatitude;
   double? _selectedLongitude;
   String _selectedAddress = '';
-  
+
   // Images
   List<XFile> _selectedImages = [];
   final ImagePicker _imagePicker = ImagePicker();
@@ -137,11 +136,13 @@ class _QuickRequestPageState extends State<QuickRequestPage>
       return;
     }
 
-    if (selectedService != null && _serviceMinPrices.containsKey(selectedService)) {
+    if (selectedService != null &&
+        _serviceMinPrices.containsKey(selectedService)) {
       _minPrice = _serviceMinPrices[selectedService!];
       if (price < _minPrice!) {
         setState(() {
-          _priceErrorMessage = "الحد الأدنى لخدمة ${selectedService!} هو $_minPrice ج.م";
+          _priceErrorMessage =
+              "الحد الأدنى لخدمة ${selectedService!} هو $_minPrice ج.م";
         });
       } else {
         setState(() {
@@ -196,46 +197,46 @@ class _QuickRequestPageState extends State<QuickRequestPage>
 
   bool _validateForm() {
     if (selectedService == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("من فضلك اختر نوع الخدمة")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("من فضلك اختر نوع الخدمة")));
       return false;
     }
-    
+
     if (_descController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("من فضلك اكتب وصف للمشكلة")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("من فضلك اكتب وصف للمشكلة")));
       return false;
     }
-    
+
     if (_budgetController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("من فضلك ادخل الميزانية")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("من فضلك ادخل الميزانية")));
       return false;
     }
-    
+
     if (_priceErrorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_priceErrorMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_priceErrorMessage!)));
       return false;
     }
-    
+
     if (_selectedLatitude == null || _selectedLongitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("من فضلك حدد موقعك على الخريطة")),
       );
       return false;
     }
-    
+
     return true;
   }
 
   void _submitRequest() {
     if (!_validateForm()) return;
-    
+
     print("=== طلب جديد ===");
     print("الخدمة: $selectedService");
     print("الوصف: ${_descController.text}");
@@ -243,14 +244,14 @@ class _QuickRequestPageState extends State<QuickRequestPage>
     print("الموقع: $_selectedAddress");
     print("الإحداثيات: $_selectedLatitude, $_selectedLongitude");
     print("عدد الصور: ${_selectedImages.length}");
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("تم إرسال الطلب بنجاح"),
         backgroundColor: Colors.green,
       ),
     );
-    
+
     setState(() {
       selectedService = null;
       _descController.clear();
@@ -303,7 +304,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     return Material(
       color: Colors.transparent,
       child: SingleChildScrollView(
@@ -342,10 +343,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
       onChanged: (value) => setState(() => _searchQuery = value),
       decoration: InputDecoration(
         hintText: "ابحث عن خدمة...",
-        prefixIcon: Icon(
-          Icons.search,
-          color: Color(AppColors.primaryColor),
-        ),
+        prefixIcon: Icon(Icons.search, color: Color(AppColors.primaryColor)),
         filled: true,
         fillColor: Color(AppColors.cardsColor),
         border: OutlineInputBorder(
@@ -368,7 +366,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
         ),
       );
     }
-    
+
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -381,10 +379,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
           onTap: () => _onServiceSelected(service["name"]),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: isSelected ? color : color.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
@@ -392,13 +387,15 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                 color: isSelected ? color : Colors.transparent,
                 width: 2,
               ),
-              boxShadow: isSelected ? [
-                BoxShadow(
-                  color: color.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ] : null,
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: color.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -481,9 +478,13 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          _selectedAddress.isNotEmpty ? _selectedAddress : "اضغط لتحديد موقعك على الخريطة",
+                          _selectedAddress.isNotEmpty
+                              ? _selectedAddress
+                              : "اضغط لتحديد موقعك على الخريطة",
                           style: TextStyle(
-                            color: _selectedAddress.isNotEmpty ? Colors.black : Colors.grey[500],
+                            color: _selectedAddress.isNotEmpty
+                                ? Colors.black
+                                : Colors.grey[500],
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -491,7 +492,10 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                         if (_selectedLatitude != null)
                           Text(
                             "${_selectedLatitude!.toStringAsFixed(4)}, ${_selectedLongitude!.toStringAsFixed(4)}",
-                            style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[400],
+                            ),
                           ),
                       ],
                     ),
@@ -527,15 +531,9 @@ class _QuickRequestPageState extends State<QuickRequestPage>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          flex: 3,
-          child: _buildImagesSection(),
-        ),
+        Expanded(flex: 3, child: _buildImagesSection()),
         const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: _buildBudgetField(),
-        ),
+        Expanded(flex: 2, child: _buildBudgetField()),
       ],
     );
   }
@@ -546,7 +544,11 @@ class _QuickRequestPageState extends State<QuickRequestPage>
       children: [
         Row(
           children: [
-            Icon(Icons.image_outlined, size: 18, color: Color(AppColors.primaryColor)),
+            Icon(
+              Icons.image_outlined,
+              size: 18,
+              color: Color(AppColors.primaryColor),
+            ),
             const SizedBox(width: 6),
             Text(
               "صور المشكلة",
@@ -594,19 +596,25 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_photo_alternate_outlined, 
-                          size: 28, color: Colors.grey[400]),
+                        Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 28,
+                          color: Colors.grey[400],
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           "إضافة",
-                          style: TextStyle(fontSize: 9, color: Colors.grey[500]),
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Colors.grey[500],
+                          ),
                         ),
                       ],
                     ),
                   ),
                 );
               }
-              
+
               return Stack(
                 children: [
                   ClipRRect(
@@ -629,7 +637,11 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                           color: Colors.red,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.close, size: 12, color: Colors.white),
+                        child: const Icon(
+                          Icons.close,
+                          size: 12,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -648,7 +660,11 @@ class _QuickRequestPageState extends State<QuickRequestPage>
       children: [
         Row(
           children: [
-            Icon(Icons.attach_money, size: 18, color: Color(AppColors.primaryColor)),
+            Icon(
+              Icons.attach_money,
+              size: 18,
+              color: Color(AppColors.primaryColor),
+            ),
             const SizedBox(width: 6),
             Text(
               "الميزانية",
@@ -673,9 +689,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
         TextField(
           controller: _budgetController,
           keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-          ],
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(
             hintText: "المبلغ",
             suffixText: "ج.م",
@@ -714,7 +728,9 @@ class _QuickRequestPageState extends State<QuickRequestPage>
         onPressed: selectedService == null ? null : _submitRequest,
         style: ElevatedButton.styleFrom(
           backgroundColor: Color(AppColors.primaryColor),
-          disabledBackgroundColor: Color(AppColors.primaryColor).withOpacity(0.4),
+          disabledBackgroundColor: Color(
+            AppColors.primaryColor,
+          ).withOpacity(0.4),
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

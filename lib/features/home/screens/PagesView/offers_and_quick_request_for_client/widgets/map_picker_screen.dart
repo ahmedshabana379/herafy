@@ -87,119 +87,126 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Stack(
-        children: [
-          GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _selectedLocation,
-              zoom: 15,
-            ),
-            onMapCreated: (controller) {
-              _mapController = controller;
-            },
-            onTap: (latLng) {
-              setState(() {
-                _selectedLocation = latLng;
-              });
-              _getAddressFromLatLng();
-            },
-            markers: {
-              Marker(
-                markerId: const MarkerId('selected_location'),
-                position: _selectedLocation,
-                draggable: true,
-                onDragEnd: (newPosition) {
-                  setState(() {
-                    _selectedLocation = newPosition;
-                  });
-                  _getAddressFromLatLng();
-                },
-                infoWindow: InfoWindow(title: _selectedAddress),
+      body: SingleChildScrollView(
+        child: Stack(
+          children: [
+            GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: _selectedLocation,
+                zoom: 15,
               ),
-            },
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-          ),
-          // Center marker icon
-          Center(child: Icon(Icons.location_pin, color: Colors.red, size: 48)),
-          // ✅ زر الموقع الحالي (اختياري)
-          if (widget.useCurrentLocation)
-            Positioned(
-              bottom: 120,
-              right: 16,
-              child: FloatingActionButton(
-                mini: true,
-                backgroundColor: Colors.white,
-                onPressed: _getCurrentLocation,
-                child: const Icon(Icons.my_location, color: Color(0xFF6C63FF)),
-              ),
-            ),
-          // Bottom sheet with address
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
+              onMapCreated: (controller) {
+                _mapController = controller;
+              },
+              onTap: (latLng) {
+                setState(() {
+                  _selectedLocation = latLng;
+                });
+                _getAddressFromLatLng();
+              },
+              markers: {
+                Marker(
+                  markerId: const MarkerId('selected_location'),
+                  position: _selectedLocation,
+                  draggable: true,
+                  onDragEnd: (newPosition) {
+                    setState(() {
+                      _selectedLocation = newPosition;
+                    });
+                    _getAddressFromLatLng();
+                  },
+                  infoWindow: InfoWindow(title: _selectedAddress),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
+              },
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
+            ),
+            // Center marker icon
+            Center(
+              child: Icon(Icons.location_pin, color: Colors.red, size: 48),
+            ),
+            // ✅ زر الموقع الحالي (اختياري)
+            if (widget.useCurrentLocation)
+              Positioned(
+                bottom: 120,
+                right: 16,
+                child: FloatingActionButton(
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: _getCurrentLocation,
+                  child: const Icon(
+                    Icons.my_location,
+                    color: Color(0xFF6C63FF),
                   ),
-                ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "الموقع المحدد",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
+            // Bottom sheet with address
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _selectedAddress.isNotEmpty
-                        ? _selectedAddress
-                        : "جاري تحميل العنوان...",
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context, {
-                          'latitude': _selectedLocation.latitude,
-                          'longitude': _selectedLocation.longitude,
-                          'address': _selectedAddress,
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6C63FF),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "الموقع المحدد",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _selectedAddress.isNotEmpty
+                          ? _selectedAddress
+                          : "جاري تحميل العنوان...",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context, {
+                            'latitude': _selectedLocation.latitude,
+                            'longitude': _selectedLocation.longitude,
+                            'address': _selectedAddress,
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6C63FF),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          "تأكيد الموقع",
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-                      child: const Text(
-                        "تأكيد الموقع",
-                        style: TextStyle(color: Colors.white),
-                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:herafy/features/auth/screens/role_selection.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
 import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/offers_page.dart';
 import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/quick_request_page.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/pages/provider_dashboard_page.dart';
 import 'package:herafy/features/screens/complete_data.dart';
@@ -111,11 +112,12 @@ class _HerafyAppState extends State<HerafyApp> {
               ProviderDashboardPage.routeName: (context) =>
                   const ProviderDashboardPage(),
               QuickRequestPage.routeName: (context) => const QuickRequestPage(),
+              OffersPage.routeName: (context) => const OffersPage(),
             },
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
-            initialRoute: QuickRequestPage
-                .routeName, // snapshot.data ?? HomePage.routeName,
+            initialRoute:
+                OffersPage.routeName, // snapshot.data ?? HomePage.routeName,
             // snapshot.data ?? LoginPage.routeName,
           ),
         );
