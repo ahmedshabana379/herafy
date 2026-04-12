@@ -13,7 +13,6 @@ class ServiceRequestModel {
   final String? clientName;
   final int? clientId;
   final bool isUrgent;
-
   ServiceRequestModel({
     required this.id,
     required this.description,

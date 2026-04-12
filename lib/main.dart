@@ -10,6 +10,7 @@ import 'package:herafy/features/auth/screens/role_selection.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
 import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_cubit.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/pages/provider_dashboard_page.dart';
 import 'package:herafy/features/screens/complete_data.dart';
 import 'package:herafy/features/screens/create_post_screen.dart';
 import 'package:herafy/features/screens/edit_account_page.dart';
@@ -40,22 +41,22 @@ class _HerafyAppState extends State<HerafyApp> {
   }
 
   Future<String> _determineInitialRoute() async {
-  try {
-    await _authCubit.loadUserData();
-    final token = await CacheHelper.getToken();
-    final user = _authCubit.currentUser;
+    try {
+      await _authCubit.loadUserData();
+      final token = await CacheHelper.getToken();
+      final user = _authCubit.currentUser;
 
-    if (token != null && token.isNotEmpty && user != null) {
-      if (user.status == 0) {
-        return CompleteDataScreen.routeName;
+      if (token != null && token.isNotEmpty && user != null) {
+        if (user.status == 0) {
+          return CompleteDataScreen.routeName;
+        }
+        return HomePage.routeName;
       }
-      return HomePage.routeName;
+    } catch (e) {
+      debugPrint('Error: $e');
     }
-  } catch (e) {
-    debugPrint('Error: $e');
+    return LoginPage.routeName;
   }
-  return LoginPage.routeName;
-}
 
   @override
   void dispose() {
@@ -106,10 +107,14 @@ class _HerafyAppState extends State<HerafyApp> {
               CreatePostScreen.routeName: (context) => const CreatePostScreen(),
               CompleteDataScreen.routeName: (context) =>
                   const CompleteDataScreen(),
+              ProviderDashboardPage.routeName: (context) =>
+                  const ProviderDashboardPage(),
             },
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
-            initialRoute: snapshot.data ?? LoginPage.routeName,
+            initialRoute: ProviderDashboardPage
+                .routeName, // snapshot.data ?? HomePage.routeName,
+            // snapshot.data ?? LoginPage.routeName,
           ),
         );
       },
