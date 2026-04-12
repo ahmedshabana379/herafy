@@ -11,7 +11,6 @@ class PostModel {
   final List<dynamic> topReactions;
   final bool isReacted;
   final int? myReactionType;
-
   PostModel({
     required this.id,
     required this.title,

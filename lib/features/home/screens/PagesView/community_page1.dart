@@ -113,6 +113,7 @@ class _CommunityPageState extends State<CommunityPage>
                   isServiceOffer: post.isProvider,
                   isReacted: post.isReacted,
                   topReactions: post.topReactions,
+                  myReactionType: post.myReactionType,
                 );
               },
             ),
@@ -192,6 +193,7 @@ class _CommunityPageState extends State<CommunityPage>
                 isServiceOffer: post.isProvider,
                 topReactions: post.topReactions,
                 isReacted: post.isReacted,
+                myReactionType: post.myReactionType,
               );
             },
           );

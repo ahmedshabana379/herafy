@@ -3,7 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_cubit.dart';
 import 'package:herafy/features/screens/post_details_page.dart';
-
+const reactionEmojis = {
+  1: "👍",
+  2: "❤️",
+  3: "😂",
+  4: "😡",
+  5: "😢",
+};
 class PostCard extends StatefulWidget {
   final int postId;
   final String providerName,
@@ -14,7 +20,7 @@ class PostCard extends StatefulWidget {
       avatarUrl;
   final int likesCount, commentsCount;
   final bool isServiceOffer;
-  final List<dynamic> topReactions; // ← جديد
+  final List<dynamic> topReactions;
   final bool isReacted;
   final int? myReactionType;
   const PostCard({

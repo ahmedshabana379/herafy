@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
@@ -7,6 +6,7 @@ import 'package:herafy/core/components/custom_text_field.dart';
 import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/components/text-field-label.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/core/services/image_validation_service.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:herafy/features/auth/models/gov_and_regions_model.dart';
@@ -20,8 +20,10 @@ class SecondRegisterationStep extends StatefulWidget {
     super.key,
     this.onBack,
   });
+
   final VoidCallback? onBack;
   final Function(double) onProgressChanged;
+
   @override
   State<SecondRegisterationStep> createState() =>
       _SecondRegisterationStepState();
@@ -35,17 +37,16 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
   File? _criminalRecordImage;
   final TextEditingController _rangeController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   RegionModel? selectedRegion;
   GovernorateModel? selectedGovernorate;
+  bool _isValidating = false;
 
   static const int _stepOneRequiredFields = 5;
   static const int _stepTwoRequiredFields = 8;
 
   void _calculateProgress() {
     int stepTwoFilledRequired = 0;
-
     if (selectedMainCategory != null) stepTwoFilledRequired++;
     if (selectedGovernorate != null) stepTwoFilledRequired++;
     if (selectedRegion != null) stepTwoFilledRequired++;
@@ -60,13 +61,109 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
     widget.onProgressChanged(completedRequired / totalRequired);
   }
 
-  Future<void> _pickImage({required ValueSetter<File> onSelected}) async {
+  Future<void> _pickImage({
+    required ValueSetter<File> onSelected,
+    required DocumentType documentType,
+    required String fieldName,
+    String? firstName,
+    String? lastName,
+    String? birthDate,
+  }) async {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
 
-    if (image != null) {
-      setState(() => onSelected(File(image.path)));
-      _calculateProgress();
+    final file = File(image.path);
+
+    setState(() => _isValidating = true);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text("جاري التحقق من $fieldName..."),
+            ],
+          ),
+          duration: const Duration(seconds: 15),
+          backgroundColor: const Color(AppColors.primaryColor),
+        ),
+      );
+    }
+
+    final result = await ImageValidationService.validateDocument(
+      imageFile: file,
+      documentType: documentType,
+      firstName: firstName,
+      lastName: lastName,
+      birthDate: birthDate,
+    );
+
+    if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    setState(() => _isValidating = false);
+
+    if (!result.isValid) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.redAccent),
+                SizedBox(width: 8),
+                Text(
+                  "صورة غير صالحة",
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              result.rejectionReason ?? "الصورة غير واضحة أو غير مناسبة",
+              style: const TextStyle(fontSize: 15),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  "حسناً",
+                  style: TextStyle(
+                    color: Color(AppColors.primaryColor),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() => onSelected(file));
+    _calculateProgress();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ تم قبول الصورة بنجاح"),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -80,13 +177,21 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
   }
 
   @override
+  void dispose() {
+    _rangeController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cubitUser = context.read<AuthCubit>().currentUser;
+
     return SingleChildScrollView(
       child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-
           children: [
             TextFieldLabel(title: "اختر المهنة الرئيسية"),
             BlocBuilder<AuthCubit, AuthState>(
@@ -95,11 +200,9 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                   current is GetServicesLoading,
               builder: (context, state) {
                 var cubit = context.read<AuthCubit>();
-
                 if (state is GetServicesLoading) {
                   return const LinearProgressIndicator();
                 }
-
                 return DropdownButtonFormField<ServiceModel>(
                   initialValue:
                       cubit.services.any((s) => s.name == selectedMainCategory)
@@ -135,7 +238,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                 );
               },
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             TextFieldLabel(title: "المهنة الفرعية (إختياري)"),
             BlocBuilder<AuthCubit, AuthState>(
               buildWhen: (previous, current) =>
@@ -143,7 +246,6 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                   current is GetServicesLoading,
               builder: (context, state) {
                 var cubit = context.read<AuthCubit>();
-
                 return DropdownButtonFormField<ServiceModel>(
                   initialValue:
                       cubit.services.any((s) => s.name == selectedSubCategory)
@@ -161,11 +263,8 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                       )
                       .toList(),
                   onChanged: (value) {
-                    setState(() {
-                      selectedSubCategory = value?.name;
-                    });
+                    setState(() => selectedSubCategory = value?.name);
                     cubit.providerSubCategory = value?.id.toString();
-                    // Optional field should not affect progress.
                   },
                   hint: const Text("اختر من القائمة"),
                   decoration: InputDecoration(
@@ -186,11 +285,9 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                   current is GetRegionsError,
               builder: (context, state) {
                 var cubit = context.read<AuthCubit>();
-
                 if (state is GetRegionsLoading) {
-                  return LinearProgressIndicator();
+                  return const LinearProgressIndicator();
                 }
-
                 return DropdownButtonFormField<GovernorateModel>(
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.location_city_outlined),
@@ -198,7 +295,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  hint: Text("اختر المحافظة"),
+                  hint: const Text("اختر المحافظة"),
                   items: cubit.governorates
                       .map(
                         (gov) => DropdownMenuItem<GovernorateModel>(
@@ -218,7 +315,6 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                 );
               },
             ),
-
             const SizedBox(height: 10),
             TextFieldLabel(title: "المنطقة"),
             BlocBuilder<AuthCubit, AuthState>(
@@ -239,7 +335,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  hint: Text("اختر المنطقة"),
+                  hint: const Text("اختر المنطقة"),
                   items: cubit.filteredRegions
                       .map(
                         (region) => DropdownMenuItem(
@@ -249,9 +345,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                       )
                       .toList(),
                   onChanged: (val) {
-                    setState(() {
-                      selectedRegion = val;
-                    });
+                    setState(() => selectedRegion = val);
                     _calculateProgress();
                     cubit.providerRegionId = val!.id.toString();
                   },
@@ -272,7 +366,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                 return null;
               },
               isPassword: false,
-              hintText: " 10 كيلومتر  ",
+              hintText: "10 كيلومتر",
               icon: Icons.map_outlined,
               controller: _rangeController,
             ),
@@ -292,14 +386,45 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
               controller: _addressController,
             ),
             const SizedBox(height: 12),
+
+            // إشعار التحقق
+            if (_isValidating)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(AppColors.primaryColor).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 10),
+                    Text("جاري التحقق من الصورة بالذكاء الاصطناعي..."),
+                  ],
+                ),
+              ),
+
             Row(
               children: [
                 Expanded(
                   child: _buildRequiredImageTile(
                     title: "الهوية",
                     file: _idCardImage,
-                    onTap: () =>
-                        _pickImage(onSelected: (file) => _idCardImage = file),
+                    onTap: _isValidating
+                        ? () {}
+                        : () => _pickImage(
+                            onSelected: (file) => _idCardImage = file,
+                            documentType: DocumentType.nationalId,
+                            fieldName: "الهوية",
+                            firstName: cubitUser?.firstName,
+                            lastName: cubitUser?.lastName,
+                            birthDate: cubitUser?.birthDate,
+                          ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -307,8 +432,13 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                   child: _buildRequiredImageTile(
                     title: "الصورة الشخصية",
                     file: _profileImage,
-                    onTap: () =>
-                        _pickImage(onSelected: (file) => _profileImage = file),
+                    onTap: _isValidating
+                        ? () {}
+                        : () => _pickImage(
+                            onSelected: (file) => _profileImage = file,
+                            documentType: DocumentType.personalPhoto,
+                            fieldName: "الصورة الشخصية",
+                          ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -316,22 +446,26 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                   child: _buildRequiredImageTile(
                     title: "الفيش الجنائي",
                     file: _criminalRecordImage,
-                    onTap: () => _pickImage(
-                      onSelected: (file) => _criminalRecordImage = file,
-                    ),
+                    onTap: _isValidating
+                        ? () {}
+                        : () => _pickImage(
+                            onSelected: (file) => _criminalRecordImage = file,
+                            documentType: DocumentType.criminalRecord,
+                            fieldName: "الفيش الجنائي",
+                          ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             BlocConsumer<AuthCubit, AuthState>(
               builder: (context, state) {
                 final isLoading = state is ProviderRegisterLoading;
                 return AppButton(
                   buttonText: "... جاري الإرسال للمراجعة",
                   isLoading: isLoading,
-                  isButtonEnabled: !isLoading,
-                  text: " إرسال للمراجعة",
+                  isButtonEnabled: !isLoading && !_isValidating,
+                  text: "إرسال للمراجعة",
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       if (_idCardImage == null ||
@@ -351,7 +485,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                                 ),
                                 SizedBox(width: 8),
                                 Text(
-                                  "تنبية",
+                                  "تنبيه",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.redAccent,
@@ -377,13 +511,10 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                             ],
                           ),
                         );
-
                         return;
                       }
 
                       final cubit = context.read<AuthCubit>();
-
-                      // استدعاء completeProviderRegistration()
                       if (selectedGovernorate != null &&
                           selectedRegion != null) {
                         cubit.completeProviderRegistration(
@@ -424,8 +555,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
                 }
               },
             ),
-
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -442,7 +572,7 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
       child: Container(
         height: 130,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: _isValidating ? Colors.grey[50] : Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: file != null
@@ -455,27 +585,53 @@ class _SecondRegisterationStepState extends State<SecondRegisterationStep> {
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.add_a_photo_outlined,
                     size: 28,
-                    color: Color(AppColors.primaryColor),
+                    color: _isValidating
+                        ? Colors.grey
+                        : const Color(AppColors.primaryColor),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _isValidating ? Colors.grey : Colors.black,
+                    ),
                   ),
                 ],
               )
-            : ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.file(
-                  file,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
+            : Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      file,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                    ),
+                  ),
+                  // علامة صح على الصورة المقبولة
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
       ),
     );

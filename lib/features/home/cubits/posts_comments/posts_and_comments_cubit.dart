@@ -91,7 +91,6 @@ class SocialCubit extends Cubit<SocialState> {
     }
   }
 
-  // 2. إضافة منشور (مع دعم الصور)
   Future<void> createPost({
     required String title,
     required String description,
@@ -136,7 +135,7 @@ class SocialCubit extends Cubit<SocialState> {
       );
 
       emit(CreatePostSuccess());
-      await getPosts(isRefresh: true); // ← بيجيب الداتا الحقيقية من السيرفر
+      await getPosts(isRefresh: true);
     } on DioException catch (error) {
       final data = error.response?.data;
       String message = "Failed to create post";
@@ -151,15 +150,13 @@ class SocialCubit extends Cubit<SocialState> {
     }
   }
 
-  // 3. جلب تعليقات منشور معين
   void getComments(int postId, {bool isRefresh = false}) async {
     if (!isRefresh) {
       emit(GetCommentsLoading());
     }
     try {
       final response = await DioHelper.getRequest(
-        endPoint:
-            "${AppEndPoints.getPostComments}$postId",
+        endPoint: "${AppEndPoints.getPostComments}$postId",
       );
       final dynamic payload = response.data;
       List rawList = [];
@@ -183,7 +180,6 @@ class SocialCubit extends Cubit<SocialState> {
     }
   }
 
-  // 4. إضافة تعليق
   void addComment({required int postId, required String content}) async {
     emit(AddCommentLoading());
     try {
@@ -197,7 +193,7 @@ class SocialCubit extends Cubit<SocialState> {
       String userName = user != null && user.fullName.trim().isNotEmpty
           ? user.fullName
           : "مستخدم";
-          
+
       if (userName.trim().toLowerCase() == 'user') {
         userName = "مستخدم";
       }
@@ -235,60 +231,68 @@ class SocialCubit extends Cubit<SocialState> {
   }
 
   // React على بوست
- // React على بوست - عدل الـ query parameter
-void reactToPost({required int postId, required int reactionType}) async {
-  emit(ReactToPostLoading());
-  try {
-    await DioHelper.putRequest(
-      endPoint: "${AppEndPoints.reactToPost}$postId",
-      queryParameters: {"reaction": reactionType}, // ← reaction مش ReactionType
-    );
-    emit(ReactToPostSuccess());
-    getPosts(isRefresh: true);
-  } on DioException catch (error) {
-    final data = error.response?.data;
-    String message = "Failed to react to post";
-    if (data is Map && data['message'] != null) {
-      message = data['message'].toString();
+  void reactToPost({required int postId, required int reactionType}) async {
+    emit(ReactToPostLoading());
+    try {
+      await DioHelper.putRequest(
+        endPoint: "${AppEndPoints.reactToPost}$postId",
+        queryParameters: {
+          "reaction": reactionType,
+        }, 
+      );
+      emit(ReactToPostSuccess());
+      getPosts(isRefresh: true);
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      String message = "Failed to react to post";
+      if (data is Map && data['message'] != null) {
+        message = data['message'].toString();
+      }
+      emit(ReactToPostError(message));
+    } catch (error) {
+      emit(ReactToPostError("Failed to react to post"));
     }
-    emit(ReactToPostError(message));
-  } catch (error) {
-    emit(ReactToPostError("Failed to react to post"));
   }
-}
 
-void reactToComment({required int commentId, required int reactionType}) async {
-  emit(ReactToCommentLoading());
-  try {
-    await DioHelper.putRequest(
-      endPoint: "${AppEndPoints.reactToComment}$commentId",
-      queryParameters: {"reaction": reactionType}, // ← reaction مش ReactionType
-    );
-    emit(ReactToCommentSuccess());
-  } on DioException catch (error) {
-    final data = error.response?.data;
-    String message = "Failed to react to comment";
-    if (data is Map && data['message'] != null) {
-      message = data['message'].toString();
+  void reactToComment({
+    required int commentId,
+    required int reactionType,
+  }) async {
+    emit(ReactToCommentLoading());
+    try {
+      await DioHelper.putRequest(
+        endPoint: "${AppEndPoints.reactToComment}$commentId",
+        queryParameters: {
+          "reaction": reactionType,
+        }, // ← reaction مش ReactionType
+      );
+      emit(ReactToCommentSuccess());
+    } on DioException catch (error) {
+      final data = error.response?.data;
+      String message = "Failed to react to comment";
+      if (data is Map && data['message'] != null) {
+        message = data['message'].toString();
+      }
+      emit(ReactToCommentError(message));
+    } catch (error) {
+      emit(ReactToCommentError("Failed to react to comment"));
     }
-    emit(ReactToCommentError(message));
-  } catch (error) {
-    emit(ReactToCommentError("Failed to react to comment"));
   }
-}
 
-Future<Map<int, int>> getPostReactions(int postId) async {
-  try {
-    final response = await DioHelper.getRequest(
-      endPoint: "${AppEndPoints.getPostReactions}$postId",
-    );
-    final data = response.data;
-    if (data is Map) {
-      return data.map((k, v) => MapEntry(int.tryParse(k.toString()) ?? 0, v as int));
+  Future<Map<int, int>> getPostReactions(int postId) async {
+    try {
+      final response = await DioHelper.getRequest(
+        endPoint: "${AppEndPoints.getPostReactions}$postId",
+      );
+      final data = response.data;
+      if (data is Map) {
+        return data.map(
+          (k, v) => MapEntry(int.tryParse(k.toString()) ?? 0, v as int),
+        );
+      }
+      return {};
+    } catch (_) {
+      return {};
     }
-    return {};
-  } catch (_) {
-    return {};
   }
-}
 }
