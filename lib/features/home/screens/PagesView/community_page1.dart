@@ -158,7 +158,6 @@ class _CommunityPageState extends State<CommunityPage>
 
               final post = _socialCubit!.posts[index];
               final hasImage = post.imageUrls.isNotEmpty;
-              const baseUrl = "https://iti-final-project.runasp.net/";
 
               String timeAgo = "";
               if (post.createdAt != null) {

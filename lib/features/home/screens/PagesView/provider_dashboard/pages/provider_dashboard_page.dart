@@ -1,9 +1,9 @@
 // lib/features/home/screens/PagesView/provider_dashboard/provider_dashboard_page.dart
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/core/services/location_service.dart';
 import 'package:herafy/features/home/models/request_offer_model.dart';
 import 'package:herafy/features/home/models/service_request_model.dart';
-import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/stat_card.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/request_card.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/offer_dialog.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/track_request_map.dart';
@@ -27,12 +27,56 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
 
   // العروض اللي قدمها البروفايدر (لتخزينها محلياً)
   List<RequestOfferModel> _myOffers = [];
-
+  bool _isLoading = true;
+  bool _locationEnabled = false;
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadMockData();
+    _checkLocationAndLoadData();
+  }
+
+  Future<void> _checkLocationAndLoadData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // فحص وتشغيل الموقع
+    bool locationReady = await LocationService.requestLocationService(context);
+
+    if (!locationReady && mounted) {
+      // لو المستخدم رفض الموقع، نعرض رسالة ونقفل الصفحة
+      setState(() {
+        _isLoading = false;
+        _locationEnabled = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("لا يمكن استخدام التطبيق بدون تفعيل خدمة الموقع"),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      // نرجع للصفحة السابقة
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) Navigator.pop(context);
+      });
+      return;
+    }
+
+    setState(() {
+      _locationEnabled = true;
+    });
+
+    // تحميل البيانات بعد تفعيل الموقع
+    await _loadMockData();
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -41,7 +85,13 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
     super.dispose();
   }
 
-  void _loadMockData() {
+  Future<void> _loadMockData() async {
+    final currentLocation = await LocationService.getCurrentLocation();
+    if (currentLocation != null) {
+      print(
+        "الموقع الحالي: ${currentLocation.latitude}, ${currentLocation.longitude}",
+      );
+    }
     // طلبات جديدة (لم يقدم عليها عرض)
     _pendingRequests = [
       ServiceRequestModel(
@@ -199,7 +249,9 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Center(child: Text("تم إرسال عرضك على طلب ${request.clientName} بنجاح")),
+          content: Center(
+            child: Text("تم إرسال عرضك على طلب ${request.clientName} بنجاح"),
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -224,6 +276,83 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Color(AppColors.primaryColor)),
+              const SizedBox(height: 16),
+              Text(
+                "جاري التحقق من الموقع...",
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // إذا الموقع مش مفعل
+    if (!_locationEnabled) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.location_disabled,
+                  size: 80,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "خدمة الموقع غير مفعلة",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "لا يمكننا عرض الطلبات بدون تفعيل خدمة الموقع",
+                  style: TextStyle(color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton.icon(
+                  onPressed: _checkLocationAndLoadData,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text("إعادة المحاولة"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(AppColors.primaryColor),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("رجوع"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final stats = {
       'new': _pendingRequests.length,
       'offered': _offeredRequests.length,
@@ -298,40 +427,40 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
 
           // Tabs
           // Tabs
-        Container(
-  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  height: 48,
-  decoration: BoxDecoration(
-    color: Colors.grey[100],
-    borderRadius: BorderRadius.circular(16),
-  ),
-  child: TabBar(
-    controller: _tabController,
-    indicatorSize: TabBarIndicatorSize.tab,
-    indicator: BoxDecoration(
-      color: Color(AppColors.primaryColor),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    labelColor: Colors.white,
-    unselectedLabelColor: Colors.grey[600],
-    labelStyle: const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-    ),
-    unselectedLabelStyle: const TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.w500,
-    ),
-    // التحكم في المسافات بين التابات
-    padding: EdgeInsets.zero,  // إزالة padding الداخلي
-    labelPadding: EdgeInsets.zero,  // إزالة padding بين النص والتاب
-    tabs: [
-      Tab(text: "جديدة (${stats['new']})"),
-      Tab(text: "عروض مرسلة (${stats['offered']})"),
-      Tab(text: "منتهية (${stats['completed']})"),
-    ],
-  ),
-),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicator: BoxDecoration(
+                color: Color(AppColors.primaryColor),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.grey[600],
+              labelStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              // التحكم في المسافات بين التابات
+              padding: EdgeInsets.zero, // إزالة padding الداخلي
+              labelPadding: EdgeInsets.zero, // إزالة padding بين النص والتاب
+              tabs: [
+                Tab(text: "جديدة (${stats['new']})"),
+                Tab(text: "عروض مرسلة (${stats['offered']})"),
+                Tab(text: "منتهية (${stats['completed']})"),
+              ],
+            ),
+          ),
 
           // TabBar View
           Expanded(
