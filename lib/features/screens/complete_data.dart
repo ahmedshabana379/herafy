@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:herafy/features/auth/models/gov_and_regions_model.dart';
+import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -39,7 +40,6 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
   void initState() {
     super.initState();
     final user = context.read<AuthCubit>().currentUser;
-
     _firstNameController = TextEditingController(text: user?.firstName ?? "");
     _lastNameController = TextEditingController(text: user?.lastName ?? "");
     _phoneController = TextEditingController(text: user?.phoneNumber ?? "");
@@ -104,17 +104,25 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
         ),
         body: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
-            if (state is UpdateProfileSuccess) {
-              SnackBarHelper.showSuccessSnackBar(
-                context,
-                "تم حفظ البيانات بنجاح",
-              );
-              // اذهب للـ HomePage بعد الحفظ
-              Navigator.pushReplacementNamed(context, HomePage.routeName);
-            } else if (state is UpdateProfileError) {
-              SnackBarHelper.showErrorSnackBar(context, state.message);
-            }
-          },
+  if (state is UpdateProfileSuccess) {
+    SnackBarHelper.showSuccessSnackBar(context, "تم حفظ البيانات بنجاح");
+
+    final user = context.read<AuthCubit>().currentUser;
+
+   if (user?.isProvider == true) {
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const ProviderRegisterPage(startFromSecondStep: true),
+    ),
+  );
+} else {
+  Navigator.pushReplacementNamed(context, HomePage.routeName);
+}
+  } else if (state is UpdateProfileError) {
+    SnackBarHelper.showErrorSnackBar(context, state.message);
+  }
+},
           builder: (context, state) {
             var cubit = context.read<AuthCubit>();
 

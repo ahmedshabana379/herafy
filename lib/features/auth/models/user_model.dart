@@ -10,12 +10,12 @@ class UserModel {
   final int
   status; // 0=Pending, 1=UnderReview, 2=Approved, 3=Rejected, 4=Suspended, 5=Completed
   final bool? isProviderFromServer;
-  final int? gender; 
+  final int? gender;
   final String? phoneNumber;
   final int? governorateId;
   final int? regionId;
   final String? birthDate;
-   // الـ ID عشان نبعته في الـ Update
+  // الـ ID عشان نبعته في الـ Update
   final String? governorateName; // للعرض في البروفايل
   final String? regionName;
   UserModel({
@@ -28,7 +28,14 @@ class UserModel {
     this.isAuthenticated,
     this.isProfileComplete = false,
     this.status = 0,
-    this.isProviderFromServer, this.gender, this.phoneNumber, this.governorateId, this.regionId, this.birthDate, this.governorateName, this.regionName,
+    this.isProviderFromServer,
+    this.gender,
+    this.phoneNumber,
+    this.governorateId,
+    this.regionId,
+    this.birthDate,
+    this.governorateName,
+    this.regionName,
   });
 
   bool get isProvider =>
@@ -62,7 +69,7 @@ class UserModel {
       accessToken: json['accessToken'],
       roles: parsedRoles,
       isAuthenticated: json['isAuthenticated'],
-      isProfileComplete: status ==5 || json['isProfileComplete'] == false ? false : true, // لو الحالة Completed يبقى البروفايل كامل حتى لو isProfileComplete جاي false
+      isProfileComplete: json['isProfileComplete'] ?? (status == 5),
       status: status,
       isProviderFromServer: json['isProvider'],
       gender: json['gender'],
@@ -72,8 +79,6 @@ class UserModel {
       birthDate: json['birthDate'],
       governorateName: json['governorateName'],
       regionName: json['regionName'],
-    
-
     );
   }
 
@@ -96,7 +101,6 @@ class UserModel {
       'birthDate': birthDate,
       'governorateName': governorateName,
       'regionName': regionName,
-      
     };
   }
 
@@ -118,7 +122,6 @@ class UserModel {
     String? birthDate,
     String? governorateName,
     String? regionName,
-    
   }) {
     return UserModel(
       firstName: firstName ?? this.firstName,

@@ -57,19 +57,10 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
     _loadSavedProgress();
 
     if (widget.startFromSecondStep) {
-      _currentPage = 1;
-      if (_progress < 0.5) {
-        _progress = 0.5;
-      }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _pageController.jumpToPage(1);
-          setState(() {});
-        }
-      });
-    }
+    _currentPage = 0; 
+    _progress = 0.5;
   }
-
+  }
   Future<void> _loadSavedProgress() async {
     final savedProgress = await CacheHelper.getProviderProgress();
     if (!mounted) return;
@@ -191,24 +182,32 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
                 controller: _pageController,
                 physics: NeverScrollableScrollPhysics(),
                 onPageChanged: (index) => setState(() => _currentPage = index),
-                children: [
-                  if (!widget.startFromSecondStep)
-                    FirstRegisterationStep(
-                      onProgressChanged: _updateProgress,
-                      onNext: nextStep,
-                      formKey: _formKey,
-                      firstNameController: _firstNameController,
-                      lastNameController: _lastNameController,
-                      emailController: _emailController,
-                      passwordController: _passwordController,
-                      confirmPasswordController: _confirmPasswordController,
-                    ),
-                  if (widget.startFromSecondStep)
-                    SecondRegisterationStep(
-                      onBack: previousStep,
-                      onProgressChanged: _updateProgress,
-                    ),
-                ],
+                // ✅ بدّل الـ PageView children
+children: widget.startFromSecondStep
+    ? [
+        // لما بييجي من CompleteData، item واحد بس
+        SecondRegisterationStep(
+          onBack: () => Navigator.pop(context),
+          onProgressChanged: _updateProgress,
+        ),
+      ]
+    : [
+        // الـ flow الطبيعي من الـ register
+        FirstRegisterationStep(
+          onProgressChanged: _updateProgress,
+          onNext: nextStep,
+          formKey: _formKey,
+          firstNameController: _firstNameController,
+          lastNameController: _lastNameController,
+          emailController: _emailController,
+          passwordController: _passwordController,
+          confirmPasswordController: _confirmPasswordController,
+        ),
+        SecondRegisterationStep(
+          onBack: previousStep,
+          onProgressChanged: _updateProgress,
+        ),
+      ],
               ),
             ),
           ],

@@ -125,3 +125,4 @@ class UpdateProfileError extends AuthState {
   final String message;
   UpdateProfileError(this.message);
 }
+class UserDataUpdated extends AuthState {}

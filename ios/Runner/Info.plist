@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>نحتاج موقعك لتحديد الطلبات القريبة منك</string>
+    <string>نحتاج إلى موقعك لتحديد عنوان الخدمة</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>نحتاج موقعك لتحديث الطلبات القريبة منك</string>
+    <string>نحتاج إلى موقعك لتحديد عنوان الخدمة</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

@@ -1,5 +1,8 @@
+import 'package:herafy/features/home/models/live_location_model.dart';
+import 'package:herafy/features/home/models/review_model.dart';
 import 'package:herafy/features/home/models/service_request_model.dart';
 import 'package:herafy/features/home/models/request_offer_model.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/models/request_model.dart';
 
 // Service Requests States
 abstract class ServiceRequestState {}
@@ -32,17 +35,16 @@ class GetClientServiceRequestsError extends ServiceRequestState {
   GetClientServiceRequestsError(this.error);
 }
 
-// Get Provider Available Service Requests
 class GetProviderAvailableRequestsLoading extends ServiceRequestState {}
 
 class GetProviderAvailableRequestsSuccess extends ServiceRequestState {
-  final List<ServiceRequestModel> requests;
+  final List<ServiceRequestModelProvider> requests;
   GetProviderAvailableRequestsSuccess(this.requests);
 }
 
 class GetProviderAvailableRequestsError extends ServiceRequestState {
-  final String error;
-  GetProviderAvailableRequestsError(this.error);
+  final String message;
+  GetProviderAvailableRequestsError(this.message);
 }
 
 // Get Provider Assigned Service Requests
@@ -141,4 +143,68 @@ class DeleteServiceRequestSuccess extends ServiceRequestState {}
 class DeleteServiceRequestError extends ServiceRequestState {
   final String error;
   DeleteServiceRequestError(this.error);
+}
+
+// ============ Check Offer Status States ============
+
+class CheckOfferStatusInitial extends ServiceRequestState {}
+
+class CheckOfferStatusLoading extends ServiceRequestState {}
+
+class CheckOfferStatusSuccess extends ServiceRequestState {
+  final String status; // Pending, Accepted, Rejected
+  CheckOfferStatusSuccess(this.status);
+}
+
+class CheckOfferStatusError extends ServiceRequestState {
+  final String message;
+  CheckOfferStatusError(this.message);
+}
+
+// ============ Offer Status Checked (للاستخدام داخل الـ Cubit) ============
+class OfferStatusChecked extends ServiceRequestState {
+  final String status;
+  OfferStatusChecked(this.status);
+}
+
+// ============ Update Request Status States ============
+
+class UpdateRequestStatusInitial extends ServiceRequestState {}
+
+class UpdateRequestStatusLoading extends ServiceRequestState {}
+
+class UpdateRequestStatusSuccess extends ServiceRequestState {}
+
+class UpdateRequestStatusError extends ServiceRequestState {
+  final String message;
+  UpdateRequestStatusError(this.message);
+}
+
+// ============ Live Location States ============
+class UpdateLiveLocationLoading extends ServiceRequestState {}
+class UpdateLiveLocationSuccess extends ServiceRequestState {}
+class UpdateLiveLocationError extends ServiceRequestState {
+  final String message;
+  UpdateLiveLocationError(this.message);
+}
+
+class GetLiveLocationLoading extends ServiceRequestState {}
+class GetLiveLocationSuccess extends ServiceRequestState {
+  final LiveLocationResponseModel location;
+  GetLiveLocationSuccess(this.location);
+}
+class GetLiveLocationError extends ServiceRequestState {
+  final String message;
+  GetLiveLocationError(this.message);
+}
+
+// ============ Review States ============
+class CreateReviewLoading extends ServiceRequestState {}
+class CreateReviewSuccess extends ServiceRequestState {
+  final ReviewResponseModel review;
+  CreateReviewSuccess(this.review);
+}
+class CreateReviewError extends ServiceRequestState {
+  final String message;
+  CreateReviewError(this.message);
 }

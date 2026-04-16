@@ -21,7 +21,8 @@ class PostDetailsPage extends StatefulWidget {
     required this.postId,
     required this.isInitialLiked,
     required this.initialLikesCount,
-    required this.onBack, this.initialReactionType,
+    required this.onBack,
+    this.initialReactionType,
   });
 
   @override
@@ -38,7 +39,7 @@ class _PostDetailsPageState extends State<PostDetailsPage> {
     super.initState();
     isLiked = widget.isInitialLiked;
     likesCount = widget.initialLikesCount;
-    myReaction = widget.initialReactionType; 
+    myReaction = widget.initialReactionType;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.postId > 0) {
         context.read<SocialCubit>().getComments(widget.postId);

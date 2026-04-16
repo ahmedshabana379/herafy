@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/models/user_model.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/home/screens/PagesView/community_page1.dart';
 import 'package:herafy/features/home/screens/PagesView/drawers/client_drawer.dart';
+import 'package:herafy/features/home/screens/PagesView/notifications.dart';
 import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/offers_page.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/pages/provider_dashboard_page.dart';
 import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/quick_request_page.dart';
 import 'package:herafy/features/home/widgets/bar_of_tapbar_buttons.dart';
 import 'package:herafy/features/home/widgets/post_type_sheet.dart';
+import 'package:http/http.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   static const routeName = "Home";
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -24,9 +27,8 @@ class _HomePageState extends State<HomePage> {
   final ScrollController _scrollController = ScrollController();
   int _selectedIndex = 0;
   bool _isBarVisible = true;
-  UserModel? _user;
   bool _approvedBannerDismissed = false; // ← جديد
-
+  UserModel? _user;
   @override
   void initState() {
     super.initState();
@@ -42,10 +44,12 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadUserData() async {
     try {
-      final userData = await CacheHelper.getUserData();
+      var user = context.read<AuthCubit>().currentUser;
+      user ??= await CacheHelper.getUserData();
       final dismissed = await CacheHelper.isApprovedBannerDismissed();
+
       setState(() {
-        _user = userData;
+        _user = user;
         _approvedBannerDismissed = dismissed;
       });
     } catch (e) {}
@@ -64,12 +68,18 @@ class _HomePageState extends State<HomePage> {
     final int status = _user?.status ?? 0;
     final bool isProfileComplete = _user?.isProfileComplete ?? false;
 
-    final showCompleteProfileCta = isProvider && status == 0;
-    final showWaitingApprovalCta = isProvider && status == 1;
+    final showCompleteProfileCta =
+        isProvider && status == 0 && _selectedIndex == 0;
+    final showWaitingApprovalCta =
+        isProvider && status == 1 && _selectedIndex == 0;
     final showApprovedCta =
-        isProvider && status == 2 && !_approvedBannerDismissed;
+        isProvider &&
+        status == 2 &&
+        !_approvedBannerDismissed &&
+        _selectedIndex == 0;
     final showRejectedCta = isProvider && status == 3;
-    final showProviderDashboard = isProvider && status == 2;
+    final showProviderDashboard =
+        isProvider && status == 2 && _selectedIndex == 0;
 
     return Scaffold(
       floatingActionButton: _selectedIndex == 0
@@ -77,6 +87,7 @@ class _HomePageState extends State<HomePage> {
               scale: _isBarVisible ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 200),
               child: FloatingActionButton(
+                heroTag: "post_type_btn",
                 backgroundColor: Color(AppColors.primaryColor),
                 onPressed: () {
                   showModalBottomSheet(
@@ -86,7 +97,7 @@ class _HomePageState extends State<HomePage> {
                         top: Radius.circular(20),
                       ),
                     ),
-                    builder: (context) => PostTypeSheet(),
+                    builder: (context) => PostTypeSheet(user: _user),
                   );
                 },
                 child: Icon(Icons.add, color: Colors.white),
@@ -115,13 +126,10 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      drawer: ClientDrawer(),
+      drawer: AppDrawer(user: _user),
       body: Column(
         children: [
           // --- Banners ---
-        
-           
-
           AnimatedContainer(
             duration: Duration(milliseconds: 300),
             height: _isBarVisible && showCompleteProfileCta ? null : 0,
@@ -194,6 +202,7 @@ class _HomePageState extends State<HomePage> {
             child: SingleChildScrollView(
               physics: NeverScrollableScrollPhysics(),
               child: ButtonsHomeBar(
+                user: _user,
                 selectedIndex: _selectedIndex,
                 onTap: (index) {
                   if (_selectedIndex == index && index == 0) {
@@ -225,18 +234,10 @@ class _HomePageState extends State<HomePage> {
               children: [
                 CommunityPage(scrollController: _scrollController),
                 QuickRequestPage(),
-                OffersPage(),
-                showProviderDashboard
+                _user?.isProvider == true
                     ? ProviderDashboardPage()
-                    : const Center(
-                        child: Text(
-                          "الخدمة غير متاحة الآن",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                    : OffersPage(),
+                NotificationsPage(),
               ],
             ),
           ),

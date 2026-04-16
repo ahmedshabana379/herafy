@@ -4,14 +4,15 @@ import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
+import 'package:herafy/features/auth/models/user_model.dart';
 import 'package:herafy/features/auth/screens/login.dart';
 import 'package:herafy/features/screens/edit_account_page.dart';
 
-class ClientDrawer extends StatelessWidget {
+class AppDrawer extends StatelessWidget {
   final int receivedOffersCount;
+  final UserModel? user;
 
-  const ClientDrawer({super.key, this.receivedOffersCount = 3});
-
+  const AppDrawer({super.key, this.receivedOffersCount = 3, this.user});
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -35,16 +36,24 @@ class ClientDrawer extends StatelessWidget {
                   },
                 ),
                 _buildMenuItem(
-                  icon: Icons.notifications_active_outlined,
-                  title: "الإشعارات",
+                  icon: Icons.history_rounded,
+                  title: "المحفوظات ",
                   onTap: () {},
                 ),
                 _buildMenuItem(
-                  icon: Icons.local_offer_outlined,
-                  title: "عروض الحرفيين",
-                  trailing: _buildCounterBadge(receivedOffersCount),
+                  icon: Icons.history_rounded,
+                  title: "خدماتك ",
                   onTap: () {},
                 ),
+
+                user?.isProvider == true
+                    ? _buildMenuItem(
+                        icon: Icons.local_offer_outlined,
+                        title: "عروض الحرفيين",
+                        trailing: _buildCounterBadge(receivedOffersCount),
+                        onTap: () {},
+                      )
+                    : const SizedBox(),
 
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
@@ -64,6 +73,10 @@ class ClientDrawer extends StatelessWidget {
 
   Widget _buildProfileHeader(BuildContext context) {
     return BlocBuilder<AuthCubit, AuthState>(
+      buildWhen: (previous, current) =>
+          current is UserDataUpdated ||
+          current is LogoutSuccess ||
+          current is LogoutSuccess,
       builder: (context, state) {
         final user = context.read<AuthCubit>().currentUser;
         final displayEmail = user?.email ?? "";

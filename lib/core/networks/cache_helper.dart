@@ -13,10 +13,22 @@ class CacheHelper {
   static Future<String?> getToken() async {
     return await storage.read(key: 'token');
   }
+  static Future<int> getStatus() async {
+    final status = await storage.read(key: 'status');
+    return status != null ? int.parse(status) : 0;
+  }
+  static Future<bool> getRole() async {
+    final rule = await storage.read(key: 'isProvider');
+    return rule != null ? rule == 'true' : false;
+  }
+
 
   // save token
   static Future<void> saveToken(String token) async {
     return await storage.write(key: 'token', value: token);
+  }
+  static Future<void> saveStatus(int status) async {
+    return await storage.write(key: 'status', value: status.toString());
   }
 
   //   delete token
@@ -28,9 +40,11 @@ class CacheHelper {
   static Future<void> saveUserData(UserModel user) async {
     try {
       await storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
-    } catch (e) {}
+    } catch (e) {
+      // Handle error if needed
+    }
   }
-
+  
   // get user data
   static Future<UserModel?> getUserData() async {
     try {

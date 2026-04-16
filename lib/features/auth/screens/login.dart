@@ -1,14 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/app_button.dart';
 import 'package:herafy/core/components/custom_text_field.dart';
 import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/components/text-field-label.dart';
+import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
 import 'package:herafy/features/auth/screens/role_selection.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
+import 'package:herafy/features/screens/complete_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -28,6 +32,7 @@ class _LoginPageState extends State<LoginPage> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _emailController.text = prefs.getString('saved_email') ?? '';
+      _passwordController.text = prefs.getString('saved_password') ?? '';
       rememberMe = prefs.getBool('remember_me') ?? false;
     });
   }
@@ -36,12 +41,50 @@ class _LoginPageState extends State<LoginPage> {
     final prefs = await SharedPreferences.getInstance();
     if (rememberMe) {
       await prefs.setString('saved_email', _emailController.text);
+      await prefs.setBool(
+        "saved_password",
+        _passwordController.text.isNotEmpty,
+      );
       await prefs.setBool('remember_me', true);
     } else {
       await prefs.remove('saved_email');
       await prefs.remove('remember_me');
     }
   }
+  // Future<String> _determineInitialRoute() async {
+  //   try {
+  //     await _authCubit.loadUserData();
+  //     final token = await CacheHelper.getToken();
+  //     final user = _authCubit.currentUser;
+
+  //     if (token != null && token.isNotEmpty && user != null) {
+
+  //       // 🟡 لو لسه مكملش بياناته
+  //       if (user.status == 0 ) {
+  //         return CompleteDataScreen.routeName;
+  //       }
+
+  //       // 🟠 لو Provider ومستني موافقة
+  //       if (user.isProvider && user.status == 1) {
+  //         return HomePage.routeName;
+  //       }
+
+  //       // 🔴 لو مرفوض
+  //       // if (user.status == 3) {
+  //       //   return LoginPage.routeName;
+  //       // }
+
+  //       // 🟢 Approved
+  //       if (user.status == 2 || user.status == 5) {
+  //         return HomePage.routeName;
+  //       }
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error: $e');
+  //   }
+
+  //   return LoginPage.routeName;
+  // }
 
   @override
   void initState() {
@@ -114,7 +157,6 @@ class _LoginPageState extends State<LoginPage> {
                   TextFieldLabel(title: "البريد الإلكتروني"),
 
                   CustomTextField(
-                    
                     keyboardType: TextInputType.emailAddress,
                     controller: _emailController,
                     validator: (value) {
@@ -128,7 +170,8 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                     hintText: "example@email.com",
-                    icon: Icons.email_outlined, isPassword: false,
+                    icon: Icons.email_outlined,
+                    isPassword: false,
                   ),
                   const SizedBox(height: 10),
                   TextFieldLabel(title: "كلمة المرور"),
@@ -199,10 +242,21 @@ class _LoginPageState extends State<LoginPage> {
                     listener: (context, state) {
                       if (state is LoginSuccess) {
                         saveUserData();
-                        Navigator.pushReplacementNamed(
-                          context,
-                          HomePage.routeName,
-                        );
+                        final user = context.read<AuthCubit>().currentUser;
+
+                        if (user == null) return;
+
+                        if (user.status == 0) {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            CompleteDataScreen.routeName,
+                          );
+                        } else {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            HomePage.routeName,
+                          );
+                        }
                       } else if (state is LoginError) {
                         SnackBarHelper.showErrorSnackBar(
                           context,

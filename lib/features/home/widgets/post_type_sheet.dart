@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
+import 'package:herafy/features/auth/models/user_model.dart';
 import 'package:herafy/features/screens/create_post_screen.dart';
 
 class PostTypeSheet extends StatelessWidget {
-  const PostTypeSheet({super.key});
+  const PostTypeSheet({super.key, this.user});
+ final UserModel? user;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +34,9 @@ class PostTypeSheet extends StatelessWidget {
           const SizedBox(height: 24),
 
           // عرض خدمة
+         user?.isProvider == true ?
           _PostTypeOption(
+            isService: true,
             icon: Icons.handyman_rounded,
             title: "عرض خدمة",
             description: "انشر عرضك وخلي العملاء يطلبوا خدمتك مباشرة",
@@ -43,16 +47,29 @@ class PostTypeSheet extends StatelessWidget {
                 arguments: "service",
               );
             },
+          ): _PostTypeOption(
+            isService: true, 
+            icon: Icons.handyman_rounded,
+            title: " طلب خدمة",
+            description: "اطلب الخدمة اللي عايزها وخلي الحرفيين يعرضوا عليك عروضهم",
+            onTap: () {
+              Navigator.pushNamed(
+                context,
+                CreatePostScreen.routeName,
+                arguments: "service",
+              );
+            },
           ),
+
           const SizedBox(height: 12),
 
           // مشاركة عامة
           _PostTypeOption(
+            isService: false,
             icon: Icons.public,
             title: "مشاركة عامة",
             description: "شارك شغلك مع المجتمع بدون طلب خدمة",
             onTap: () {
-              Navigator.pop(context);
               // أو
               Navigator.pushNamed(
                 context,
@@ -73,9 +90,9 @@ class _PostTypeOption extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.description,
-    required this.onTap,
+    required this.onTap, required this.isService,
   });
-
+  final bool isService;
   final IconData icon;
   final String title;
   final String description;

@@ -1,70 +1,97 @@
 class ServiceRequestModel {
   final int id;
+  final int requestStatus; // 0 = Pending, 1 = Assigned, etc.
   final String description;
-  final int serviceId;
-  final String serviceName;
-  final double budget;
-  final double latitude;
-  final double longitude;
-  final String locationAddress;
-  final List<String> images;
-  final String status; // Pending, Assigned, InProgress, Completed, Cancelled
+  final double? finalPrice;
   final String createdAt;
-  final String? clientName;
-  final int? clientId;
-  final bool isUrgent;
+  final String? preferredTime;
+  final int clientId;
+  final int? providerId;
+  final ServiceRequestLocation location;
+  final int serviceId;
+  final List<String> imageUrls;
+
   ServiceRequestModel({
     required this.id,
+    required this.requestStatus,
     required this.description,
-    required this.serviceId,
-    required this.serviceName,
-    required this.budget,
-    required this.latitude,
-    required this.longitude,
-    required this.locationAddress,
-    required this.images,
-    required this.status,
+    this.finalPrice,
     required this.createdAt,
-    this.clientName,
-    this.clientId,
-    this.isUrgent = false,
+    this.preferredTime,
+    required this.clientId,
+    this.providerId,
+    required this.location,
+    required this.serviceId,
+    required this.imageUrls,
   });
 
   factory ServiceRequestModel.fromJson(Map<String, dynamic> json) {
     return ServiceRequestModel(
       id: json['id'] ?? 0,
+      requestStatus: json['requestStatus'] ?? 0,
       description: json['description'] ?? '',
-      serviceId: json['serviceId'] ?? 0,
-      serviceName: json['serviceName'] ?? '',
-      budget: (json['budget'] ?? 0).toDouble(),
-      latitude: (json['latitude'] ?? 0.0).toDouble(),
-      longitude: (json['longitude'] ?? 0.0).toDouble(),
-      locationAddress: json['locationAddress'] ?? '',
-      images: json['images'] != null ? List<String>.from(json['images']) : [],
-      status: json['status'] ?? 'Pending',
+      finalPrice: json['finalPrice']?.toDouble(),
       createdAt: json['createdAt'] ?? DateTime.now().toIso8601String(),
-      clientName: json['clientName'],
-      clientId: json['clientId'],
-      isUrgent: json['isUrgent'] ?? false,
+      preferredTime: json['preferredTime'],
+      clientId: json['clientId'] ?? 0,
+      providerId: json['providerId'],
+      serviceId: json['serviceId'] ?? 0,
+      location: ServiceRequestLocation.fromJson(json['serviceRequestLocation'] ?? {}),
+      imageUrls: json['imageUrls'] != null ? List<String>.from(json['imageUrls']) : [],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'requestStatus': requestStatus,
       'description': description,
+      'finalPrice': finalPrice,
+      'createdAt': createdAt,
+      'preferredTime': preferredTime,
+      'clientId': clientId,
+      'providerId': providerId,
+      'serviceRequestLocation': location.toJson(),
       'serviceId': serviceId,
-      'serviceName': serviceName,
-      'budget': budget,
+      'imageUrls': imageUrls,
+    };
+  }
+  
+  // Getter للحالة كنص
+  String get statusText {
+    switch (requestStatus) {
+      case 0: return 'قيد الانتظار';
+      case 1: return 'تم التعيين';
+      case 2: return 'قيد التنفيذ';
+      case 3: return 'مكتمل';
+      case 4: return 'ملغي';
+      default: return 'غير معروف';
+    }
+  }
+
+  String get serviceName => 'اسم الخدمة'; // Placeholder, يجب استبداله بالاسم الحقيقي للخدمة بناءً على serviceId
+}
+
+class ServiceRequestLocation {
+  final double latitude;
+  final double longitude;
+
+  ServiceRequestLocation({
+    required this.latitude,
+    required this.longitude,
+  });
+
+  factory ServiceRequestLocation.fromJson(Map<String, dynamic> json) {
+    return ServiceRequestLocation(
+      latitude: (json['latitude'] ?? 0.0).toDouble(),
+      longitude: (json['longitude'] ?? 0.0).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
       'latitude': latitude,
       'longitude': longitude,
-      'locationAddress': locationAddress,
-      'images': images,
-      'status': status,
-      'createdAt': createdAt,
-      'clientName': clientName,
-      'clientId': clientId,
-      'isUrgent': isUrgent,
     };
   }
 }

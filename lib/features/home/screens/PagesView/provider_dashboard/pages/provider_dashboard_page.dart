@@ -1,11 +1,16 @@
 // lib/features/home/screens/PagesView/provider_dashboard/provider_dashboard_page.dart
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/core/services/location_service.dart';
+import 'package:herafy/features/home/cubits/services_requests/cubit/service_request_cubit.dart';
+import 'package:herafy/features/home/cubits/services_requests/cubit/service_request_state.dart';
 import 'package:herafy/features/home/models/request_offer_model.dart';
-import 'package:herafy/features/home/models/service_request_model.dart';
-import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/request_card.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/models/request_model.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/offer_dialog.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/request_card.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/stat_card.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/widgets/view_request_map.dart';
 
 class ProviderDashboardPage extends StatefulWidget {
@@ -19,50 +24,29 @@ class ProviderDashboardPage extends StatefulWidget {
 class _ProviderDashboardPageState extends State<ProviderDashboardPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  // قوائم الطلبات
-  List<ServiceRequestModel> _pendingRequests =
-      []; // طلبات جديدة (لم يقدم عليها عرض)
-  List<ServiceRequestModel> _offeredRequests = []; // طلبات قدم عليها عرض
-  List<ServiceRequestModel> _completedRequests = []; // طلبات منتهية
-
-  // العروض اللي قدمها البروفايدر (لتخزينها محلياً)
-  List<RequestOfferModel> _myOffers = [];
-  bool _isLoading = true;
   bool _locationEnabled = false;
+  bool _isInitializing = true;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadMockData();
     _checkLocationAndLoadData();
   }
 
   Future<void> _checkLocationAndLoadData() async {
+    if (!mounted) return;
     setState(() {
-      _isLoading = true;
+      _isInitializing = true;
     });
 
-    // فحص وتشغيل الموقع
     bool locationReady = await LocationService.requestLocationService(context);
+    if (!mounted) return;
 
-    if (!locationReady && mounted) {
-      // لو المستخدم رفض الموقع، نعرض رسالة ونقفل الصفحة
+    if (!locationReady) {
       setState(() {
-        _isLoading = false;
+        _isInitializing = false;
         _locationEnabled = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("لا يمكن استخدام التطبيق بدون تفعيل خدمة الموقع"),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
-
-      // نرجع للصفحة السابقة
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) Navigator.pop(context);
       });
       return;
     }
@@ -71,11 +55,12 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       _locationEnabled = true;
     });
 
-    // تحميل البيانات بعد تفعيل الموقع
-    await _loadMockData();
-
+    await context.read<ServiceRequestCubit>().getProviderAvailableRequests();
+    await context.read<ServiceRequestCubit>().getProviderAssignedRequests();
+    await context.read<ServiceRequestCubit>().getProviderOffers();
+    if (!mounted) return;
     setState(() {
-      _isLoading = false;
+      _isInitializing = false;
     });
   }
 
@@ -85,189 +70,62 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
     super.dispose();
   }
 
-  Future<void> _loadMockData() async {
-    final currentLocation = await LocationService.getCurrentLocation();
-    if (currentLocation != null) {
-      print(
-        "الموقع الحالي: ${currentLocation.latitude}, ${currentLocation.longitude}",
-      );
-    }
-    // طلبات جديدة (لم يقدم عليها عرض)
-    _pendingRequests = [
-      ServiceRequestModel(
-        id: 1,
-        description: "تسريب مياه في الحمام وتغيير الوصلات القديمة",
-        serviceId: 1,
-        serviceName: "سباك",
-        budget: 300,
-        latitude: 30.0444,
-        longitude: 31.2357,
-        locationAddress: "المهندسين، الجيزة",
-        images: [],
-        status: "Pending",
-        createdAt: DateTime.now()
-            .subtract(const Duration(minutes: 5))
-            .toIso8601String(),
-        clientName: "محمد أحمد",
-        clientId: 101,
-        isUrgent: true,
-      ),
-      ServiceRequestModel(
-        id: 2,
-        description: "انسداد في بيارة المطبخ وصعوبة في تصريف المياه",
-        serviceId: 1,
-        serviceName: "سباك",
-        budget: 150,
-        latitude: 30.0644,
-        longitude: 31.2857,
-        locationAddress: "مدينة نصر، القاهرة",
-        images: [],
-        status: "Pending",
-        createdAt: DateTime.now()
-            .subtract(const Duration(minutes: 20))
-            .toIso8601String(),
-        clientName: "سارة علي",
-        clientId: 102,
-        isUrgent: false,
-      ),
-      ServiceRequestModel(
-        id: 3,
-        description: "تركيب سخان جديد وتوصيل المواسير الخارجية",
-        serviceId: 1,
-        serviceName: "سباك",
-        budget: 500,
-        latitude: 30.0644,
-        longitude: 31.2457,
-        locationAddress: "الزمالك، القاهرة",
-        images: [],
-        status: "Pending",
-        createdAt: DateTime.now()
-            .subtract(const Duration(hours: 1))
-            .toIso8601String(),
-        clientName: "كريم حسن",
-        clientId: 103,
-        isUrgent: false,
-      ),
-    ];
+  // في provider_dashboard_page.dart
 
-    // طلبات قدم عليها عرض (مثال)
-    _offeredRequests = [
-      ServiceRequestModel(
-        id: 4,
-        description: "تغيير جميع الأسلاك الكهربائية للشقة",
-        serviceId: 2,
-        serviceName: "كهربائي",
-        budget: 800,
-        latitude: 30.0544,
-        longitude: 31.2557,
-        locationAddress: "مصر الجديدة، القاهرة",
-        images: [],
-        status: "Assigned", // Assigned معناها البروفايدر قدم عرض وتم تخصيصه
-        createdAt: DateTime.now()
-            .subtract(const Duration(days: 1))
-            .toIso8601String(),
-        clientName: "أحمد محمود",
-        clientId: 104,
-        isUrgent: false,
-      ),
-    ];
-
-    // طلبات منتهية
-    _completedRequests = [
-      ServiceRequestModel(
-        id: 5,
-        description: "دهان غرفتين وصالون",
-        serviceId: 4,
-        serviceName: "نقاش",
-        budget: 1200,
-        latitude: 30.0344,
-        longitude: 31.2257,
-        locationAddress: "الدقي، الجيزة",
-        images: [],
-        status: "Completed",
-        createdAt: DateTime.now()
-            .subtract(const Duration(days: 5))
-            .toIso8601String(),
-        clientName: "نهاد محمد",
-        clientId: 105,
-        isUrgent: false,
-      ),
-    ];
-
-    setState(() {});
-  }
-
-  // تقديم عرض على طلب
-  Future<void> _submitOffer(ServiceRequestModel request) async {
+  Future<void> _submitOffer(ServiceRequestModelProvider request) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => OfferDialog(
         requestBudget: request.budget,
-        serviceName: request.serviceName,
+        serviceName: "طلب خدمة رقم ${request.id}",
       ),
     );
 
-    if (result != null && mounted) {
-      // إنشاء عرض جديد
-      final newOffer = RequestOfferModel(
-        id: DateTime.now().millisecondsSinceEpoch,
+    if (result == null || !mounted) return;
+
+    try {
+      await context.read<ServiceRequestCubit>().createRequestOffer(
         serviceRequestId: request.id,
-        providerId: 1001,
-        providerName: "أبو العز سباك",
         price: result['price'],
         message: result['message'],
-        status: "Pending",
-        createdAt: DateTime.now().toIso8601String(),
       );
 
-      _myOffers.add(newOffer);
-
-      // نقل الطلب من القائمة المعلقة إلى قائمة العروض المرسلة
-      setState(() {
-        _pendingRequests.removeWhere((r) => r.id == request.id);
-
-        // إنشاء طلب جديد بنفس البيانات ولكن status = "Assigned"
-        final updatedRequest = ServiceRequestModel(
-          id: request.id,
-          description: request.description,
-          serviceId: request.serviceId,
-          serviceName: request.serviceName,
-          budget: request.budget,
-          latitude: request.latitude,
-          longitude: request.longitude,
-          locationAddress: request.locationAddress,
-          images: request.images,
-          status: "Assigned", // تم تخصيصه
-          createdAt: request.createdAt,
-          clientName: request.clientName,
-          clientId: request.clientId,
-          isUrgent: request.isUrgent,
-        );
-
-        _offeredRequests.add(updatedRequest);
-      });
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Center(
-            child: Text("تم إرسال عرضك على طلب ${request.clientName} بنجاح"),
-          ),
+        const SnackBar(
+          content: Text("تم إرسال عرضك بنجاح ✓"),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      Navigator.pop(context);
+      // refresh بعد إرسال العرض
+      await context.read<ServiceRequestCubit>().getProviderAvailableRequests();
+      await context.read<ServiceRequestCubit>().getProviderAssignedRequests();
+      await context.read<ServiceRequestCubit>().getProviderOffers();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "فشل إرسال العرض: ${e.response?.data['message'] ?? 'حاول مرة أخرى'}",
+          ),
+          backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  // فتح الخريطة - البروفايدر يشوف موقع العميل
-  void _openMap(ServiceRequestModel request) {
+  void _openMap(ServiceRequestModelProvider request) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => RequestMapScreen(
           latitude: request.latitude,
           longitude: request.longitude,
-          locationName: request.locationAddress,
-          isProvider: true, // البروفايدر بيتفرج على موقع العميل
+          locationName: "موقع العميل",
+          isProvider: true,
           clientName: request.clientName ?? "العميل",
         ),
       ),
@@ -276,7 +134,7 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    if (_isInitializing) {
       return Scaffold(
         backgroundColor: Colors.white,
         body: Center(
@@ -295,7 +153,6 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       );
     }
 
-    // إذا الموقع مش مفعل
     if (!_locationEnabled) {
       return Scaffold(
         backgroundColor: Colors.white,
@@ -341,11 +198,6 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("رجوع"),
-                ),
               ],
             ),
           ),
@@ -353,134 +205,168 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       );
     }
 
-    final stats = {
-      'new': _pendingRequests.length,
-      'offered': _offeredRequests.length,
-      'completed': _completedRequests.length,
-      'earnings': 12500,
-    };
-
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 10,
-                ),
-              ],
+    return BlocConsumer<ServiceRequestCubit, ServiceRequestState>(
+      listener: (context, state) {
+        if (state is CreateRequestOfferSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Center(child: Text("تم إرسال العرض بنجاح")),
+              backgroundColor: Colors.green,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "مرحباً بك 👋",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(AppColors.primaryColor),
-                          ),
-                        ),
-                        Text(
-                          "أبو العز سباك",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    CircleAvatar(
-                      backgroundColor: Color(
-                        AppColors.primaryColor,
-                      ).withOpacity(0.1),
-                      child: Icon(
-                        Icons.person_outline,
-                        color: Color(AppColors.primaryColor),
-                      ),
+          );
+        }
+        if (state is CreateRequestOfferError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Center(child: Text(state.error)),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        if (state is GetProviderAvailableRequestsError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Center(
+                child: Text("خطأ في تحميل الطلبات: ${state.message}"),
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        final cubit = context.read<ServiceRequestCubit>();
+        print(
+          "Available Requests Count: ${cubit.providerAvailableRequests.length}",
+        );
+        for (var req in cubit.providerAvailableRequests) {
+          print(
+            "Request: ${req.id} - ${req.clientName} - Status: ${req.requestStatus}",
+          );
+        }
+        final myOffers = cubit.providerOffers;
+
+// IDs الطلبات اللي بعت عليها عرض
+final myOfferRequestIds = myOffers.map((o) => o.serviceRequestId).toSet();
+
+// جديدة — مفيش عرض مني عليها
+final pendingRequests = cubit.providerAvailableRequests
+    .where((r) => r.requestStatus == 0 && !myOfferRequestIds.contains(r.id))
+    .toList();
+
+// عروضي — بعت عليها عرض وlسه pending
+final offeredRequests = cubit.providerAvailableRequests
+    .where((r) => myOfferRequestIds.contains(r.id))
+    .toList();
+
+// منتهية — status 3
+final completedRequests = cubit.providerAssignedRequests
+    .where((r) => r.requestStatus == 3)
+    .toList();
+        // for (var req in pendingRequests) {
+        //   print("==========");
+        //   print("طلب ID: ${req.id}");
+        //   print("الإحداثيات: ${req.latitude}, ${req.longitude}");
+        //   print(
+        //     "هل الإحداثيات مصرية؟ ${req.latitude > 20 && req.latitude < 35 && req.longitude > 24 && req.longitude < 36}",
+        //   );
+        // }
+        
+
+        final stats = {
+          'new': pendingRequests.length,
+          'offered': offeredRequests.length,
+          'completed': completedRequests.length,
+        };
+
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          body: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.02),
+                      blurRadius: 10,
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                _StatsGrid(
+                child: _StatsGrid(
                   newRequests: stats['new']!,
                   offeredRequests: stats['offered']!,
                   completed: stats['completed']!,
-                  earnings: stats['earnings']!,
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          // Tabs
-          // Tabs
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              indicatorSize: TabBarIndicatorSize.tab,
-              indicator: BoxDecoration(
-                color: Color(AppColors.primaryColor),
-                borderRadius: BorderRadius.circular(16),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: Color(AppColors.primaryColor),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.grey[600],
+                  labelStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  tabs: [
+                    Tab(text: "جديدة (${stats['new']})"),
+                    Tab(text: "عروضك (${stats['offered']})"),
+                    Tab(text: "منتهية (${stats['completed']})"),
+                  ],
+                ),
               ),
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.grey[600],
-              labelStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-              // التحكم في المسافات بين التابات
-              padding: EdgeInsets.zero, // إزالة padding الداخلي
-              labelPadding: EdgeInsets.zero, // إزالة padding بين النص والتاب
-              tabs: [
-                Tab(text: "جديدة (${stats['new']})"),
-                Tab(text: "عروض مرسلة (${stats['offered']})"),
-                Tab(text: "منتهية (${stats['completed']})"),
-              ],
-            ),
-          ),
 
-          // TabBar View
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRequestsList(_pendingRequests, showOfferButton: true),
-                _buildRequestsList(_offeredRequests, showOfferButton: false),
-                _buildRequestsList(_completedRequests, showOfferButton: false),
-              ],
-            ),
+              Expanded(
+                child: TabBarView(
+  controller: _tabController,
+  children: [
+    _buildRequestsList(
+      pendingRequests,
+      showOfferButton: true,
+    ),
+    _buildRequestsList(
+      offeredRequests,
+      showOfferButton: false,
+      myOffers: cubit.providerOffers, // ← جديد
+    ),
+    _buildRequestsList(
+      completedRequests.cast<ServiceRequestModelProvider>(),
+      showOfferButton: false,
+    ),
+  ],
+),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildRequestsList(
-    List<ServiceRequestModel> requests, {
+    List<ServiceRequestModelProvider> requests, {
     required bool showOfferButton,
+    List<RequestOfferModel>? myOffers,
   }) {
     if (requests.isEmpty) {
       return Center(
@@ -504,7 +390,12 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final request = requests[index];
+        final myOffer = myOffers?.firstWhere(
+    (o) => o.serviceRequestId == request.id,
+    // ← ممكن يكون null
+  );
         return RequestCard(
+           myOffer: myOffer,
           request: request,
           onOffer: showOfferButton ? () => _submitOffer(request) : () {},
           onMapPressed: () => _openMap(request),
@@ -514,19 +405,16 @@ class _ProviderDashboardPageState extends State<ProviderDashboardPage>
   }
 }
 
-// Stats Grid
 class _StatsGrid extends StatelessWidget {
   const _StatsGrid({
     required this.newRequests,
     required this.offeredRequests,
     required this.completed,
-    required this.earnings,
   });
 
   final int newRequests;
   final int offeredRequests;
   final int completed;
-  final int earnings;
 
   @override
   Widget build(BuildContext context) {
@@ -534,90 +422,35 @@ class _StatsGrid extends StatelessWidget {
       crossAxisCount: 4,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.1,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      childAspectRatio: 1.2,
       children: [
-        _StatItem(
+        StatCard(
           title: "جديدة",
           value: "$newRequests",
           icon: Icons.notifications_active_outlined,
           color: const Color(0xFF6C63FF),
         ),
-        _StatItem(
-          title: "عروض مرسلة",
+        StatCard(
+          title: "عروضك",
           value: "$offeredRequests",
           icon: Icons.send_outlined,
           color: const Color(0xFFFFAA5A),
         ),
-        _StatItem(
+        StatCard(
           title: "منتهية",
           value: "$completed",
           icon: Icons.task_alt,
           color: const Color(0xFF43C59E),
         ),
-        _StatItem(
+        StatCard(
           title: "الأرباح",
-          value: "${(earnings / 1000).toStringAsFixed(1)}k",
+          value: "0",
           icon: Icons.payments_outlined,
           color: const Color(0xFF5B8DEF),
         ),
       ],
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  const _StatItem({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
-
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          Text(title, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
-        ],
-      ),
     );
   }
 }

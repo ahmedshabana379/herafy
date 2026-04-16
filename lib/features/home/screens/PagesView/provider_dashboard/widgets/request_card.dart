@@ -1,7 +1,8 @@
 // lib/features/home/screens/PagesView/provider_dashboard/widgets/request_card.dart
 import 'package:flutter/material.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
-import 'package:herafy/features/home/models/service_request_model.dart';
+import 'package:herafy/features/home/models/request_offer_model.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/models/request_model.dart';
 
 class RequestCard extends StatelessWidget {
   const RequestCard({
@@ -9,11 +10,25 @@ class RequestCard extends StatelessWidget {
     required this.request,
     required this.onOffer,
     required this.onMapPressed,
+    this.myOffer,
   });
-
-  final ServiceRequestModel request;
+  final RequestOfferModel? myOffer;
+  final ServiceRequestModelProvider request;
   final VoidCallback onOffer;
   final VoidCallback onMapPressed;
+
+  String get _timeAgo {
+    final createdAt = DateTime.tryParse(request.createdAt);
+    if (createdAt == null) return "منذ قليل";
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inMinutes < 60) {
+      return "منذ ${diff.inMinutes} دقائق";
+    } else if (diff.inHours < 24) {
+      return "منذ ${diff.inHours} ساعات";
+    } else {
+      return "منذ ${diff.inDays} أيام";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,10 +93,7 @@ class RequestCard extends StatelessWidget {
       child: CircleAvatar(
         radius: 22,
         backgroundColor: Color(AppColors.cardsColor),
-        child: Icon(
-          Icons.person_outline,
-          color: Color(AppColors.primaryColor),
-        ),
+        child: Icon(Icons.person_outline, color: Color(AppColors.primaryColor)),
       ),
     );
   }
@@ -92,18 +104,22 @@ class RequestCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(
-              request.clientName ?? "عميل",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
+            Flexible(
+              child: Text(
+                request.clientName ?? "عميل",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
             if (request.isUrgent) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               _buildUrgentBadge(),
             ],
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             _buildStatusBadge(),
           ],
         ),
@@ -112,9 +128,13 @@ class RequestCard extends StatelessWidget {
           children: [
             Icon(Icons.location_on, size: 14, color: Colors.grey[400]),
             const SizedBox(width: 4),
-            Text(
-              request.locationAddress,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            Expanded(
+              child: Text(
+                "موقع العميل",
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
             ),
           ],
         ),
@@ -127,28 +147,28 @@ class RequestCard extends StatelessWidget {
     Color textColor;
     String text;
 
-    switch (request.status) {
-      case 'Pending':
+    switch (request.requestStatus) {
+      case 0:
         bgColor = Colors.orange[50]!;
         textColor = Colors.orange;
         text = "قيد الانتظار";
         break;
-      case 'Assigned':
+      case 1:
         bgColor = Colors.blue[50]!;
         textColor = Colors.blue;
         text = "تم التخصيص";
         break;
-      case 'InProgress':
+      case 2:
         bgColor = Colors.green[50]!;
         textColor = Colors.green;
         text = "قيد التنفيذ";
         break;
-      case 'Completed':
+      case 3:
         bgColor = Colors.teal[50]!;
         textColor = Colors.teal;
         text = "مكتمل";
         break;
-      case 'Cancelled':
+      case 4:
         bgColor = Colors.red[50]!;
         textColor = Colors.red;
         text = "ملغي";
@@ -156,7 +176,7 @@ class RequestCard extends StatelessWidget {
       default:
         bgColor = Colors.grey[50]!;
         textColor = Colors.grey;
-        text = request.status;
+        text = "غير معروف";
     }
 
     return Container(
@@ -195,21 +215,8 @@ class RequestCard extends StatelessWidget {
   }
 
   Widget _buildTimeAgo() {
-    // حساب الوقت المنقضي (مؤقت)
-    final createdAt = DateTime.tryParse(request.createdAt);
-    String timeAgo = "منذ قليل";
-    if (createdAt != null) {
-      final diff = DateTime.now().difference(createdAt);
-      if (diff.inMinutes < 60) {
-        timeAgo = "منذ ${diff.inMinutes} دقائق";
-      } else if (diff.inHours < 24) {
-        timeAgo = "منذ ${diff.inHours} ساعات";
-      } else {
-        timeAgo = "منذ ${diff.inDays} أيام";
-      }
-    }
     return Text(
-      timeAgo,
+      _timeAgo,
       style: TextStyle(fontSize: 11, color: Colors.grey[400]),
     );
   }
@@ -218,7 +225,7 @@ class RequestCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildTag(Icons.category_outlined, request.serviceName),
+        _buildTag(Icons.category_outlined, "طلب خدمة"),
         Text(
           "${request.budget.toStringAsFixed(0)} ج.م",
           style: const TextStyle(
@@ -255,216 +262,160 @@ class RequestCard extends StatelessWidget {
     );
   }
 
-Widget _buildActionButtons(BuildContext context) {
-  // إذا كان الطلب مكتمل أو ملغي، مفيش أزرار
-  if (request.status == 'Completed' || request.status == 'Cancelled') {
-    return const SizedBox.shrink();
-  }
+  Widget _buildActionButtons(BuildContext context) {
+    if (request.requestStatus == 3 || request.requestStatus == 4) {
+      return const SizedBox.shrink();
+    }
 
-  // إذا كان الطلب في حالة Assigned (عروض مرسلة)
-  if (request.status == 'Assigned') {
-    // هنفترض إن فيه عرض pending، لو اتقبل هتتغير الحالة
-    // مؤقتاً هنستخدم isAccepted متغير وهمي
-    final bool isOfferAccepted = false; // هتتيجي من API بعدين
-    final bool isOfferRejected = false; // هتتيجي من API بعدين
-    
+    if (request.requestStatus == 1) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: const BorderRadius.vertical(
+            bottom: Radius.circular(20),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildPendingOfferBadge(),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: onMapPressed,
+                icon: Icon(
+                  Icons.map_outlined,
+                  size: 18,
+                  color: Color(AppColors.primaryColor),
+                ),
+                label: Text(
+                  "على الخريطة",
+                  style: TextStyle(
+                    color: Color(AppColors.primaryColor),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // حالة العرض
-            if (isOfferAccepted)
-              _buildAcceptedOfferBadge()
-            else if (isOfferRejected)
-              _buildRejectedOfferBadge()
-            else
-              _buildPendingOfferBadge(),
-            
-            // زرار الخريطة
-            TextButton.icon(
+      child: Row(
+        children: [
+          Expanded(
+            child: TextButton(
               onPressed: onMapPressed,
-              icon: Icon(Icons.map_outlined, size: 18, color: Color(AppColors.primaryColor)),
-              label: Text(
-                "على الخريطة",
-                style: TextStyle(color: Color(AppColors.primaryColor)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.map_outlined, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    "على الخريطة",
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          Container(width: 1, height: 20, color: Colors.grey[200]),
+          Expanded(
+            child: TextButton(
+              onPressed: onOffer,
+              child: Text(
+                "تقديم عرض",
+                style: TextStyle(
+                  color: Color(AppColors.primaryColor),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // الطلبات الجديدة (Pending)
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.grey[50],
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-    ),
-    child: Row(
+  Widget _buildPendingOfferBadge() {
+    if (myOffer == null) {
+      return const SizedBox.shrink();
+    }
+    // لون ومحتوى بناءً على status العرض
+    Color color;
+    String text;
+    IconData icon;
+
+    switch (myOffer?.status) {
+      case 'Accepted':
+        color = Colors.green;
+        text = "تم قبول عرضك ✓";
+        icon = Icons.check_circle_outline;
+        break;
+      case 'Rejected':
+        color = Colors.red;
+        text = "تم رفض عرضك";
+        icon = Icons.cancel_outlined;
+        break;
+      default:
+        color = Colors.orange;
+        text = "في انتظار قبول العميل";
+        icon = Icons.hourglass_empty;
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: TextButton(
-            onPressed: onMapPressed,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.map_outlined, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  "على الخريطة",
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ],
+        // سعر العرض
+        if (myOffer != null)
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.teal[50],
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-        ),
-        Container(width: 1, height: 20, color: Colors.grey[200]),
-        Expanded(
-          child: TextButton(
-            onPressed: onOffer,
             child: Text(
-              "تقديم عرض",
-              style: TextStyle(
-                color: Color(AppColors.primaryColor),
+              "${myOffer!.price.toStringAsFixed(0)} ج.م",
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.teal,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-// عرض حالة العرض (قيد الانتظار)
-Widget _buildPendingOfferBadge() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.orange[50],
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.orange.withOpacity(0.3)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+        // status badge
         Container(
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: Colors.orange,
-            shape: BoxShape.circle,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
-        ),
-        const SizedBox(width: 8),
-        const Text(
-          "في انتظار قبول العميل",
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.orange,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-// عرض حالة العرض (مقبول)
-Widget _buildAcceptedOfferBadge() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.green[50],
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.green.withOpacity(0.3)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.check_circle, color: Colors.green, size: 14),
-        const SizedBox(width: 8),
-        const Text(
-          "تم قبول عرضك - قيد التنفيذ",
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.green,
-            fontWeight: FontWeight.w500,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 12, color: color),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
         ),
       ],
-    ),
-  );
-}
-
-// عرض حالة العرض (مرفوض)
-Widget _buildRejectedOfferBadge() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.red[50],
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.red.withOpacity(0.3)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.cancel, color: Colors.red, size: 14),
-        const SizedBox(width: 8),
-        const Text(
-          "لم يقبل العميل عرضك",
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.red,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-// إضافة دالة جديدة لعرض حالة العرض
-Widget _buildOfferStatusBadge() {
-  // مؤقتاً هنفترض إن العرض لسةPending (هتتغير لما نربط API)
-  // لو العرض Accepted أو Rejected هتظهر مختلفة
-  
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.orange[50],
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.orange.withOpacity(0.3)),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: const BoxDecoration(
-            color: Colors.orange,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        const Text(
-          "في انتظار قبول العميل",
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.orange,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
+    );
+  }
 }

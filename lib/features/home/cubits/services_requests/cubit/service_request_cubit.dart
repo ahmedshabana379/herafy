@@ -1,18 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:dio/dio.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
 import 'package:herafy/core/networks/end_points.dart';
 import 'package:herafy/features/home/cubits/services_requests/cubit/service_request_state.dart';
+import 'package:herafy/features/home/models/live_location_model.dart';
+import 'package:herafy/features/home/models/review_model.dart';
 import 'package:herafy/features/home/models/service_request_model.dart';
 import 'package:herafy/features/home/models/request_offer_model.dart';
+import 'package:herafy/features/home/screens/PagesView/provider_dashboard/models/request_model.dart';
 
 class ServiceRequestCubit extends Cubit<ServiceRequestState> {
   ServiceRequestCubit() : super(ServiceRequestInitial());
 
   List<ServiceRequestModel> clientRequests = [];
-  List<ServiceRequestModel> providerAvailableRequests = [];
+  List<ServiceRequestModelProvider> providerAvailableRequests = [];
   List<ServiceRequestModel> providerAssignedRequests = [];
   List<RequestOfferModel> requestOffers = [];
+  List<RequestOfferModel> providerOffers = [];
 
   // 1. Create Service Request (Client)
   Future<void> createServiceRequest({
@@ -26,14 +33,21 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
   }) async {
     emit(CreateServiceRequestLoading());
     try {
-      FormData formData = FormData.fromMap({
-        'Description': description,
-        'ServiceId': serviceId,
-        'Budget': budget,
-        'Latitude': latitude,
-        'Longitude': longitude,
-        if (locationAddress != null) 'LocationAddress': locationAddress,
-      });
+      // ✅ تعديل البيانات لتتناسب مع شكل الـ API المتوقع
+      Map<String, dynamic> requestData = {
+        'description': description,
+        'serviceId': serviceId,
+        'budget': budget, // دا الـ budget اللي هيتحول لـ finalPrice بعد التعيين
+        'latitude': latitude,
+        'longitude': longitude,
+      };
+
+      // ✅ إضافة locationAddress لو موجود
+      if (locationAddress != null && locationAddress.isNotEmpty) {
+        requestData['locationAddress'] = locationAddress;
+      }
+
+      FormData formData = FormData.fromMap(requestData);
 
       // إضافة الصور إن وجدت
       if (imagePaths != null && imagePaths.isNotEmpty) {
@@ -43,7 +57,8 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
               'Images',
               await MultipartFile.fromFile(
                 imagePaths[i],
-                filename: 'request_image_${DateTime.now().millisecondsSinceEpoch}_$i.jpg',
+                filename:
+                    'request_image_${DateTime.now().millisecondsSinceEpoch}_$i.jpg',
               ),
             ),
           );
@@ -51,21 +66,30 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
       }
 
       final response = await DioHelper.postRequest(
-        endPoint: AppEndPoints.createServiceRequest,
+        endPoint: AppEndPoints.clientCreateServiceRequest,
         data: formData,
+        contentType: FormData,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final request = ServiceRequestModel.fromJson(response.data);
         emit(CreateServiceRequestSuccess(request));
+
+        // ✅ عرض رسالة نجاح
+        return Future.value();
       } else {
         emit(CreateServiceRequestError('فشل إنشاء الطلب'));
       }
     } on DioException catch (e) {
-      String errorMessage = e.response?.data['message'] ?? 'حدث خطأ في الاتصال';
+      String errorMessage =
+          e.response?.data['message'] ??
+          e.response?.data['title'] ??
+          'حدث خطأ في الاتصال';
       emit(CreateServiceRequestError(errorMessage));
+      rethrow;
     } catch (e) {
       emit(CreateServiceRequestError(e.toString()));
+      rethrow;
     }
   }
 
@@ -74,7 +98,7 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     emit(GetClientServiceRequestsLoading());
     try {
       final response = await DioHelper.getRequest(
-        endPoint: AppEndPoints.getClientServiceRequests,
+        endPoint: AppEndPoints.clientGetHisServiceRequests,
       );
 
       if (response.statusCode == 200) {
@@ -101,23 +125,37 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     emit(GetProviderAvailableRequestsLoading());
     try {
       final response = await DioHelper.getRequest(
-        endPoint: AppEndPoints.getProviderAvailableRequests,
+        endPoint: AppEndPoints.providerGetAvailableRequests,
+        query: {'pageIndex': 1, 'pageSize': 100},
       );
 
+      print(
+        "Provider Available Requests Response: ${response.data}",
+      ); // ✅ للتأكد
+
       if (response.statusCode == 200) {
-        List<ServiceRequestModel> requests = [];
-        if (response.data is List) {
-          requests = (response.data as List)
-              .map((item) => ServiceRequestModel.fromJson(item))
+        List<ServiceRequestModelProvider> requests = [];
+
+        // ✅ الـ Response جاي في data
+        final data = response.data['data'] ?? response.data;
+
+        if (data is List) {
+          requests = (data as List)
+              .map((item) => ServiceRequestModelProvider.fromJson(item))
               .toList();
         }
-        providerAvailableRequests = requests;
+
+        providerAvailableRequests = requests; // ✅ لازم تغير نوع المتغير
+        print("عدد الطلبات المتاحة: ${requests.length}"); // ✅ للتأكد
         emit(GetProviderAvailableRequestsSuccess(requests));
       } else {
         emit(GetProviderAvailableRequestsError('فشل جلب الطلبات'));
       }
     } on DioException catch (e) {
-      emit(GetProviderAvailableRequestsError(e.message ?? 'حدث خطأ في الاتصال'));
+      print("Error: ${e.response?.data}");
+      emit(
+        GetProviderAvailableRequestsError(e.message ?? 'حدث خطأ في الاتصال'),
+      );
     } catch (e) {
       emit(GetProviderAvailableRequestsError(e.toString()));
     }
@@ -128,7 +166,7 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     emit(GetProviderAssignedRequestsLoading());
     try {
       final response = await DioHelper.getRequest(
-        endPoint: AppEndPoints.getProviderAssignedRequests,
+        endPoint: AppEndPoints.providerGetAssignedRequests,
       );
 
       if (response.statusCode == 200) {
@@ -158,8 +196,10 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     emit(AssignServiceRequestLoading());
     try {
       final response = await DioHelper.putRequest(
-        endPoint: '${AppEndPoints.assignServiceRequest}/$requestId',
-        data: {'ProviderId': providerId},
+        endPoint:
+            '${AppEndPoints.clientAssignServiceRequestToProvider}/$requestId',
+        data: {},
+        queryParameters: {'providerId': providerId},
       );
 
       if (response.statusCode == 200) {
@@ -182,7 +222,7 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     emit(AcceptServiceRequestLoading());
     try {
       final response = await DioHelper.putRequest(
-        endPoint: '${AppEndPoints.acceptServiceRequest}/$requestId',
+        endPoint: '${AppEndPoints.providerAcceptServiceRequest}/$requestId',
         data: {},
       );
 
@@ -211,11 +251,8 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     emit(CreateRequestOfferLoading());
     try {
       final response = await DioHelper.postRequest(
-        endPoint: '${AppEndPoints.createRequestOffer}/$serviceRequestId',
-        data: {
-          'Price': price,
-          'Message': message,
-        },
+        endPoint: '${AppEndPoints.providerCreateOffer}/$serviceRequestId',
+        data: {'Price': price, 'Message': message},
       );
 
       if (response.statusCode == 200) {
@@ -239,7 +276,8 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     emit(GetRequestOffersLoading());
     try {
       final response = await DioHelper.getRequest(
-        endPoint: '${AppEndPoints.getRequestOffers}/$serviceRequestId',
+        endPoint:
+            '${AppEndPoints.clientGetServiceRequestOffers}/$serviceRequestId',
       );
 
       if (response.statusCode == 200) {
@@ -261,69 +299,269 @@ class ServiceRequestCubit extends Cubit<ServiceRequestState> {
     }
   }
 
-  // 9. Update Request Offer
-  Future<void> updateRequestOffer({
-    required int offerId,
-    required double price,
-    required String message,
-  }) async {
-    emit(UpdateRequestOfferLoading());
+  Future<void> getProviderOffers() async {
+    emit(GetRequestOffersLoading());
     try {
-      final response = await DioHelper.putRequest(
-        endPoint: '${AppEndPoints.updateRequestOffer}/$offerId',
-        data: {
-          'Price': price,
-          'Message': message,
-        },
+      final response = await DioHelper.getRequest(
+        endPoint: AppEndPoints.providerGetHisOffers,
       );
 
       if (response.statusCode == 200) {
-        final offer = RequestOfferModel.fromJson(response.data);
-        emit(UpdateRequestOfferSuccess(offer));
-        // تحديث العروض في القائمة
-        final index = requestOffers.indexWhere((o) => o.id == offerId);
-        if (index != -1) {
-          requestOffers[index] = offer;
+        List<RequestOfferModel> offers = [];
+        if (response.data is List) {
+          offers = (response.data as List)
+              .map((item) => RequestOfferModel.fromJson(item))
+              .toList();
         }
+        providerOffers = offers;
+        emit(GetRequestOffersSuccess(offers));
       } else {
-        emit(UpdateRequestOfferError('فشل تحديث العرض'));
+        emit(GetRequestOffersError('فشل جلب عروضك'));
       }
     } on DioException catch (e) {
-      emit(UpdateRequestOfferError(e.response?.data['message'] ?? 'حدث خطأ'));
+      emit(GetRequestOffersError(e.message ?? 'حدث خطأ في الاتصال'));
     } catch (e) {
-      emit(UpdateRequestOfferError(e.toString()));
+      emit(GetRequestOffersError(e.toString()));
     }
   }
+
+  // في service_request_cubit.dart
+
+// ============ Live Location Methods ============
+
+// تحديث الموقع الحي (للفني)
+Future<void> updateLiveLocation({
+  required double latitude,
+  required double longitude,
+}) async {
+  emit(UpdateLiveLocationLoading());
+  try {
+    final body = UpdateLiveLocationRequestModel(
+      latitude: latitude,
+      longitude: longitude,
+    );
+    
+    final response = await DioHelper.putRequest(
+      endPoint: AppEndPoints.updateLiveLocation,
+      data: body.toJson(),
+    );
+    
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      emit(UpdateLiveLocationSuccess());
+      print("✅ تم تحديث الموقع الحي بنجاح");
+    } else {
+      emit(UpdateLiveLocationError('فشل تحديث الموقع'));
+    }
+  } on DioException catch (e) {
+    String errorMessage = e.response?.data['message'] ?? 'حدث خطأ في الاتصال';
+    emit(UpdateLiveLocationError(errorMessage));
+  } catch (e) {
+    emit(UpdateLiveLocationError(e.toString()));
+  }
+}
+
+// جلب الموقع الحي لمستخدم معين (للكلاينت يتتبع الفني)
+Future<void> getLiveLocation(int userId) async {
+  emit(GetLiveLocationLoading());
+  try {
+    final response = await DioHelper.getRequest(
+      endPoint: '${AppEndPoints.getLiveLocation}$userId',
+    );
+    
+    if (response.statusCode == 200) {
+      final location = LiveLocationResponseModel.fromJson(response.data);
+      emit(GetLiveLocationSuccess(location));
+    } else {
+      emit(GetLiveLocationError('فشل جلب الموقع'));
+    }
+  } on DioException catch (e) {
+    String errorMessage = e.response?.data['message'] ?? 'حدث خطأ في الاتصال';
+    emit(GetLiveLocationError(errorMessage));
+  } catch (e) {
+    emit(GetLiveLocationError(e.toString()));
+  }
+}
+
+// بدء التحديث التلقائي للموقع (للفني)
+Timer? _locationUpdateTimer;
+
+void startLiveLocationUpdates({
+  required int providerId,  // ID الفني
+  required double initialLatitude,
+  required double initialLongitude,
+}) {
+  // إيقاف أي Timer قديم
+  stopLiveLocationUpdates();
+  
+  // تحديث الموقع فوراً
+  updateLiveLocation(
+    latitude: initialLatitude,
+    longitude: initialLongitude,
+  );
+  
+  // تحديث الموقع كل 10 ثواني
+  _locationUpdateTimer = Timer.periodic(
+    const Duration(seconds: 10),
+    (timer) async {
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        
+        await updateLiveLocation(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        );
+      } catch (e) {
+        print("⚠️ خطأ في جلب الموقع: $e");
+      }
+    },
+  );
+}
+
+void stopLiveLocationUpdates() {
+  _locationUpdateTimer?.cancel();
+  _locationUpdateTimer = null;
+}
+
+// ============ Review Methods ============
+
+// إنشاء تقييم
+Future<void> createReview({
+  required int serviceRequestId,
+  required double rating,
+  required String message,
+}) async {
+  emit(CreateReviewLoading());
+  try {
+    final body = CreateReviewRequestModel(
+      serviceRequestId: serviceRequestId,
+      rating: rating,
+      message: message,
+    );
+    
+    final response = await DioHelper.postRequest(
+      endPoint: AppEndPoints.createReview,
+      data: body.toJson(),
+    );
+    
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final review = ReviewResponseModel.fromJson(response.data);
+      emit(CreateReviewSuccess(review));
+      print("✅ تم إنشاء التقييم بنجاح");
+    } else {
+      emit(CreateReviewError('فشل إنشاء التقييم'));
+    }
+  } on DioException catch (e) {
+    String errorMessage = e.response?.data['message'] ?? 'حدث خطأ في الاتصال';
+    emit(CreateReviewError(errorMessage));
+  } catch (e) {
+    emit(CreateReviewError(e.toString()));
+  }
+}
+
+// تنظيف عند الخروج
+@override
+Future<void> close() {
+  stopLiveLocationUpdates();
+  return super.close();
+}
+  // 9. Update Request Offer
+  // Future<void> updateRequestOffer({
+  //   required int offerId,
+  //   required double price,
+  //   required String message,
+  // }) async {
+  //   emit(UpdateRequestOfferLoading());
+  //   try {
+  //     final response = await DioHelper.putRequest(
+  //       endPoint: '${AppEndPoints.providerUpdateOffer}/$offerId',
+  //       data: {
+  //         'Price': price,
+  //         'Message': message,
+  //       },
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final offer = RequestOfferModel.fromJson(response.data);
+  //       emit(UpdateRequestOfferSuccess(offer));
+  //       // تحديث العروض في القائمة
+  //       final index = requestOffers.indexWhere((o) => o.id == offerId);
+  //       if (index != -1) {
+  //         requestOffers[index] = offer;
+  //       }
+  //     } else {
+  //       emit(UpdateRequestOfferError('فشل تحديث العرض'));
+  //     }
+  //   } on DioException catch (e) {
+  //     emit(UpdateRequestOfferError(e.response?.data['message'] ?? 'حدث خطأ'));
+  //   } catch (e) {
+  //     emit(UpdateRequestOfferError(e.toString()));
+  //   }
+  // }
 
   // 10. Delete Service Request
-  Future<void> deleteServiceRequest(int requestId) async {
-    emit(DeleteServiceRequestLoading());
-    try {
-      final response = await DioHelper.deleteRequest(
-        endPoint: '${AppEndPoints.deleteServiceRequest}/$requestId',
-      );
+  // Future<void> deleteServiceRequest(int requestId) async {
+  //   emit(DeleteServiceRequestLoading());
+  //   try {
+  //     final response = await DioHelper.deleteRequest(
+  //       endPoint: '${AppEndPoints.deleteServiceRequest}/$requestId',
+  //     );
 
-      if (response.statusCode == 200) {
-        emit(DeleteServiceRequestSuccess());
-        // إزالة الطلب من القوائم المحلية
-        clientRequests.removeWhere((r) => r.id == requestId);
-        providerAvailableRequests.removeWhere((r) => r.id == requestId);
-        providerAssignedRequests.removeWhere((r) => r.id == requestId);
-      } else {
-        emit(DeleteServiceRequestError('فشل حذف الطلب'));
-      }
-    } on DioException catch (e) {
-      emit(DeleteServiceRequestError(e.response?.data['message'] ?? 'حدث خطأ'));
-    } catch (e) {
-      emit(DeleteServiceRequestError(e.toString()));
-    }
-  }
+  //     if (response.statusCode == 200) {
+  //       emit(DeleteServiceRequestSuccess());
+  //       // إزالة الطلب من القوائم المحلية
+  //       clientRequests.removeWhere((r) => r.id == requestId);
+  //       providerAvailableRequests.removeWhere((r) => r.id == requestId);
+  //       providerAssignedRequests.removeWhere((r) => r.id == requestId);
+  //     } else {
+  //       emit(DeleteServiceRequestError('فشل حذف الطلب'));
+  //     }
+  //   } on DioException catch (e) {
+  //     emit(DeleteServiceRequestError(e.response?.data['message'] ?? 'حدث خطأ'));
+  //   } catch (e) {
+  //     emit(DeleteServiceRequestError(e.toString()));
+  //   }
+  // }
 
-  // مساعد: تنظيف البيانات
-  void clearData() {
-    clientRequests.clear();
-    providerAvailableRequests.clear();
-    providerAssignedRequests.clear();
-    requestOffers.clear();
-  }
+  // // مساعد: تنظيف البيانات
+  // void clearData() {
+  //   clientRequests.clear();
+  //   providerAvailableRequests.clear();
+  //   providerAssignedRequests.clear();
+  //   requestOffers.clear();
+  // }
+
+  // Provider يتابع حالة العرض بتاعه
+  //  Future<void> checkOfferStatus(int serviceRequestId) async {
+  //   emit(CheckOfferStatusLoading());
+  //   try {
+  //     final response = await DioHelper.getRequest(
+  //       endPoint: '${AppEndPoints.clientGetServiceRequestOffers}/$serviceRequestId',
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       List<RequestOfferModel> offers = [];
+  //       if (response.data is List) {
+  //         offers = (response.data as List)
+  //             .map((item) => RequestOfferModel.fromJson(item))
+  //             .toList();
+  //       }
+
+  //       final myOffer = offers.firstWhereOrNull(
+  //         (offer) => offer.providerId == _getCurrentProviderId(),
+  //       );
+
+  //       if (myOffer != null) {
+  //         emit(CheckOfferStatusSuccess(myOffer.status));
+  //       } else {
+  //         emit(CheckOfferStatusError("لا يوجد عرض لك"));
+  //       }
+  //     } else {
+  //       emit(CheckOfferStatusError('فشل جلب العروض'));
+  //     }
+  //   } catch (e) {
+  //     emit(CheckOfferStatusError(e.toString()));
+  //   }
+  // }
 }

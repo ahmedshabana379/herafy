@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
@@ -81,12 +83,23 @@ class AuthCubit extends Cubit<AuthState> {
       );
       if (response.statusCode == 200) {
         UserModel user = UserModel.fromJson(response.data);
+        print(
+          "=========================: ${user.status}============================",
+        );
 
         _currentUser = user;
+        if (user.firstName == null && user.fullName.isNotEmpty) {
+          final parts = user.fullName.trim().split(' ');
+          _currentUser = user.copyWith(
+            firstName: parts.first,
+            lastName: parts.length > 1 ? parts.sublist(1).join(' ') : '',
+          );
+        }
         if (user.accessToken != null) {
           await CacheHelper.saveToken(user.accessToken!);
           // حفظ بيانات المستخدم كاملة
           await CacheHelper.saveUserData(user);
+          emit(UserDataUpdated());
         }
         emit(LoginSuccess());
       }
@@ -116,7 +129,6 @@ class AuthCubit extends Cubit<AuthState> {
         },
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // For provider we only save step-1 draft, then user logs in normally.
         if (isProvider) {
           await CacheHelper.saveProviderStep1Data(
             firstName: firstName,
@@ -125,6 +137,15 @@ class AuthCubit extends Cubit<AuthState> {
           );
           await CacheHelper.saveProviderProgress(0.5);
         }
+        _currentUser = UserModel(
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          isProviderFromServer: isProvider,
+          roles: isProvider ? ["Provider"] : ["Client"],
+          status: 0, // NotCompleted
+        );
+        await CacheHelper.saveUserData(_currentUser!);
         emit(RegisterSuccess(isProvider));
       }
     } on DioException catch (e) {
@@ -187,6 +208,8 @@ class AuthCubit extends Cubit<AuthState> {
     required File idCardImage,
     required File profileImage,
     required File criminalRecordImage,
+    required double latitude,  
+  required double longitude,
   }) async {
     emit(ProviderRegisterLoading());
     try {
@@ -197,8 +220,8 @@ class AuthCubit extends Cubit<AuthState> {
           "GovernorateId": int.parse(governorateId),
           "RegionId": int.parse(regionId),
           "BaseLocation": {
-            "Latitude": 0.0,
-            "Longitude": 0.0,
+            "Latitude": latitude,
+            "Longitude": longitude,
             "AddressText": address,
           },
           "ServiceIds": serviceIds,
@@ -229,6 +252,9 @@ class AuthCubit extends Cubit<AuthState> {
         final updatedUser = _currentUser!.copyWith(status: 1); // UnderReview
         await CacheHelper.saveUserData(updatedUser);
         _currentUser = updatedUser;
+        print(
+          "================${_currentUser!.status} =========================",
+        );
       }
       emit(ProviderRegisterSuccess());
     } on DioException catch (e) {
@@ -261,6 +287,80 @@ class AuthCubit extends Cubit<AuthState> {
       endPoint: AppEndPoints.uploadDocument,
       data: formData,
     );
+  }
+
+  Future<void> updateUserProfile({
+    required String firstName,
+    required String lastName,
+    required String phoneNumber,
+    required int gender,
+    required int governorateId,
+    required int regionId,
+    File? profileImage,
+    DateTime? birthDate,
+  }) async {
+    emit(UpdateProfileLoading());
+    try {
+      // ✅ دايماً FormData لأن الـ API بياخد form-data
+      final formDataMap = <String, dynamic>{
+        "FirstName": firstName,
+        "LastName": lastName,
+        "GovernorateId": governorateId,
+        "RegionId": regionId,
+        "Gender": gender,
+        "PhoneNumbers": [phoneNumber], // ✅ array
+        if (birthDate != null)
+          "DateOfBirth":
+              "${birthDate.year}-${birthDate.month}-${birthDate.day}",
+        if (profileImage != null)
+          "Picture": await MultipartFile.fromFile(
+            profileImage.path,
+            filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
+      };
+
+      final response = await DioHelper.putRequest(
+        endPoint: AppEndPoints.updateClientProfile,
+        data: FormData.fromMap(formDataMap),
+      );
+
+      // ✅ تحديث الـ cache
+      if (_currentUser != null) {
+        String? newPictureUrl = _currentUser!.pictureUrl;
+
+        // لو السيرفر رجّع pictureUrl في الـ response خده منه
+        if (response.data is Map && response.data['pictureUrl'] != null) {
+          newPictureUrl = response.data['pictureUrl'];
+        }
+
+        final updatedUser = _currentUser!.copyWith(
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: phoneNumber,
+          gender: gender,
+          governorateId: governorateId,
+          regionId: regionId,
+          isProfileComplete: true,
+          pictureUrl: newPictureUrl,
+          status: _currentUser!.status == 0 ? 5 : _currentUser!.status,
+        );
+        await CacheHelper.saveUserData(updatedUser);
+        _currentUser = updatedUser;
+      }
+      emit(UserDataUpdated());
+      emit(UpdateProfileSuccess());
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      String message = "فشل تحديث البيانات";
+      if (data is Map && data['message'] != null) {
+        message = data['message'].toString();
+      } else if (data is String && data.isNotEmpty) {
+        message = data;
+      }
+      emit(UpdateProfileError(message));
+    } catch (e) {
+      emit(UpdateProfileError("حدث خطأ غير متوقع"));
+    }
   }
 
   // --- 7. Fetching Data (المحافظات والخدمات) ---
@@ -323,83 +423,4 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
   }
-
-Future<void> updateUserProfile({
-  required String firstName,
-  required String lastName,
-  required String phoneNumber,
-  required int gender,
-  required int governorateId,
-  required int regionId,
-  File? profileImage,
-  DateTime? birthDate,
-}) async {
-  emit(UpdateProfileLoading());
-  try {
-    // لو فيه صورة نبعت FormData، غير كده JSON
-    if (profileImage != null) {
-      FormData formData = FormData.fromMap({
-        "FirstName": firstName,
-        "LastName": lastName,
-        "PhoneNumber": phoneNumber,
-        "Gender": gender,
-        "GovernorateId": governorateId,
-        "RegionId": regionId,
-        if (birthDate != null) "BirthDate": birthDate.toIso8601String(),
-        "ProfileImage": await MultipartFile.fromFile(
-          profileImage.path,
-          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
-      });
-
-      await DioHelper.putRequest(
-        endPoint: AppEndPoints.updateClientProfile,
-        data: formData,
-      );
-    } else {
-      await DioHelper.putRequest(
-        endPoint: AppEndPoints.updateClientProfile,
-        data: {
-          "FirstName": firstName,
-          "LastName": lastName,
-          "PhoneNumber": phoneNumber,
-          "Gender": gender,
-          "GovernorateId": governorateId,
-          "RegionId": regionId,
-          if (birthDate != null) "BirthDate": birthDate.toIso8601String(),
-        },
-      );
-    }
-
-    // تحديث الـ cache بالبيانات الجديدة
-    if (_currentUser != null) {
-      final updatedUser = _currentUser!.copyWith(
-        firstName: firstName,
-        lastName: lastName,
-        phoneNumber: phoneNumber,
-        gender: gender,
-        governorateId: governorateId,
-        regionId: regionId,
-        isProfileComplete: true,
-        status: _currentUser!.status == 0 ? 5 : _currentUser!.status,
-      );
-      await CacheHelper.saveUserData(updatedUser);
-      _currentUser = updatedUser;
-    }
-
-    emit(UpdateProfileSuccess());
-  } on DioException catch (e) {
-    final data = e.response?.data;
-    String message = "فشل تحديث البيانات";
-    if (data is Map && data['message'] != null) {
-      message = data['message'].toString();
-    } else if (data is String && data.isNotEmpty) {
-      message = data;
-    }
-    emit(UpdateProfileError(message));
-  } catch (e) {
-    emit(UpdateProfileError("حدث خطأ غير متوقع"));
-  }
-}
-
 }

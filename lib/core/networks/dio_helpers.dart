@@ -40,6 +40,7 @@ class DioHelper {
   static Future<Response> postRequest({
     required String endPoint,
     required dynamic data,
+    Type? contentType,
     Map<String, dynamic>? query,
   }) async {
     await _setAuthHeader(); // تأكد إن التوكن موجود قبل الطلب
