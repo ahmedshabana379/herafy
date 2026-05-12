@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
@@ -25,7 +26,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
 
   // Controllers
   final TextEditingController _descController = TextEditingController();
-  final TextEditingController _budgetController = TextEditingController();
+  // final TextEditingController _budgetController = TextEditingController(); // DELETED: Removed budget controller
   final TextEditingController _searchController = TextEditingController();
 
   // Variables
@@ -42,13 +43,13 @@ class _QuickRequestPageState extends State<QuickRequestPage>
   final ImagePicker _imagePicker = ImagePicker();
 
   // Price validation
-  String? _priceErrorMessage;
-  int? _minPrice;
+  // String? _priceErrorMessage; // DELETED: Removed price error message
+  // int? _minPrice; // DELETED: Removed min price variable
 
   @override
   void initState() {
     super.initState();
-    // _budgetController.addListener(_validatePrice);
+    // _budgetController.addListener(_validatePrice); // DELETED: Removed price validation listener
     // ✅ جلب الخدمات عند تحميل الصفحة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthCubit>().getServicesData();
@@ -58,13 +59,13 @@ class _QuickRequestPageState extends State<QuickRequestPage>
   @override
   void dispose() {
     _descController.dispose();
-    _budgetController.dispose();
+    // _budgetController.dispose(); // DELETED: Removed budget controller disposal
     _searchController.dispose();
-    // _budgetController.removeListener(_validatePrice);
+    // _budgetController.removeListener(_validatePrice); // DELETED: Removed price validation listener removal
     super.dispose();
   }
 
-  // void _validatePrice() {
+  // void _validatePrice() { // DELETED: Removed entire price validation method
   //   final String priceText = _budgetController.text;
   //   if (priceText.isEmpty) {
   //     setState(() {
@@ -152,37 +153,28 @@ class _QuickRequestPageState extends State<QuickRequestPage>
 
   bool _validateForm() {
     if (selectedService == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("من فضلك اختر نوع الخدمة")));
+      SnackBarHelper.showWarningSnackBar(context, "من فضلك اختر نوع الخدمة");
       return false;
     }
 
     if (_descController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("من فضلك اكتب وصف للمشكلة")));
+      SnackBarHelper.showWarningSnackBar(context, "من فضلك اكتب وصف للمشكلة");
       return false;
     }
 
-    if (_budgetController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("من فضلك ادخل الميزانية")));
-      return false;
-    }
+    // DELETED: Removed budget validation block
+    // if (_budgetController.text.trim().isEmpty) {
+    //   SnackBarHelper.showWarningSnackBar(context, "من فضلك ادخل الميزانية");
+    //   return false;
+    // }
 
-    if (_priceErrorMessage != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_priceErrorMessage!)));
-      return false;
-    }
+    // if (_priceErrorMessage != null) {
+    //   SnackBarHelper.showWarningSnackBar(context, _priceErrorMessage!);
+    //   return false;
+    // }
 
     if (_selectedLatitude == null || _selectedLongitude == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("من فضلك حدد موقعك على الخريطة")),
-      );
+      SnackBarHelper.showWarningSnackBar(context, "من فضلك حدد موقعك على الخريطة");
       return false;
     }
 
@@ -263,12 +255,28 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                   );
                 }
 
+                final filteredServices = _searchQuery.isEmpty
+                    ? cubit.services
+                    : cubit.services
+                        .where((s) => (s.name ?? '')
+                            .toLowerCase()
+                            .contains(_searchQuery.toLowerCase()))
+                        .toList();
+
+                // لو الخدمة المختارة فيلترت من النتائج، صفِّر
+                if (selectedService != null &&
+                    !filteredServices.contains(selectedService)) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() => selectedService = null);
+                  });
+                }
+
                 return DropdownButtonFormField<ServiceModel>(
                   value: selectedService,
                   isExpanded: true,
                   validator: (value) =>
                       value == null ? 'الرجاء اختيار المهنة الرئيسية' : null,
-                  items: cubit.services
+                  items: filteredServices
                       .map(
                         (service) => DropdownMenuItem<ServiceModel>(
                           value: service,
@@ -284,7 +292,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                       selectedService = value;
                       cubit.providerCategory = value?.id.toString();
                     });
-                    // _validatePrice();
+                    // _validatePrice(); // DELETED: Removed price validation call
                   },
                   hint: const Text("اختر من القائمة"),
                   decoration: InputDecoration(
@@ -305,7 +313,8 @@ class _QuickRequestPageState extends State<QuickRequestPage>
             const SizedBox(height: 12),
             _buildDescriptionField(),
             const SizedBox(height: 16),
-            _buildImagesAndBudgetSection(),
+            // _buildImagesAndBudgetSection(), // DELETED: Removed old combined section
+            _buildImagesSectionFullWidth(), // NEW: Added full-width images section
             const SizedBox(height: 24),
             _buildSubmitButton(),
             const SizedBox(height: 20),
@@ -424,18 +433,14 @@ class _QuickRequestPageState extends State<QuickRequestPage>
     );
   }
 
-  Widget _buildImagesAndBudgetSection() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 3, child: _buildImagesSection()),
-        const SizedBox(width: 12),
-        Expanded(flex: 2, child: _buildBudgetField()),
-      ],
-    );
-  }
+  // DELETED: Removed _buildImagesAndBudgetSection (was Row with two children)
+  // Widget _buildImagesAndBudgetSection() { ... }
 
-  Widget _buildImagesSection() {
+  // DELETED: Removed _buildBudgetField entirely
+  // Widget _buildBudgetField() { ... }
+
+  // NEW: Modified images section to take full width
+  Widget _buildImagesSectionFullWidth() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -473,21 +478,21 @@ class _QuickRequestPageState extends State<QuickRequestPage>
         ),
         const SizedBox(height: 8),
         SizedBox(
-          height: 80,
+          height: 100, // Slightly increased height for better visibility
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: _selectedImages.length + 1,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               if (index == _selectedImages.length) {
                 return GestureDetector(
                   onTap: _pickImages,
                   child: Container(
-                    width: 80,
-                    height: 80,
+                    width: 100, // Slightly wider for better touch target
+                    height: 100,
                     decoration: BoxDecoration(
                       color: Color(AppColors.cardsColor),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey[300]!),
                     ),
                     child: Column(
@@ -495,14 +500,14 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                       children: [
                         Icon(
                           Icons.add_photo_alternate_outlined,
-                          size: 28,
+                          size: 32,
                           color: Colors.grey[400],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           "إضافة",
                           style: TextStyle(
-                            fontSize: 9,
+                            fontSize: 11,
                             color: Colors.grey[500],
                           ),
                         ),
@@ -515,28 +520,28 @@ class _QuickRequestPageState extends State<QuickRequestPage>
               return Stack(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     child: Image.file(
                       File(_selectedImages[index].path),
-                      width: 80,
-                      height: 80,
+                      width: 100,
+                      height: 100,
                       fit: BoxFit.cover,
                     ),
                   ),
                   Positioned(
-                    top: 2,
-                    right: 2,
+                    top: 4,
+                    right: 4,
                     child: GestureDetector(
                       onTap: () => _removeImage(index),
                       child: Container(
-                        padding: const EdgeInsets.all(3),
+                        padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
                           Icons.close,
-                          size: 12,
+                          size: 14,
                           color: Colors.white,
                         ),
                       ),
@@ -545,64 +550,6 @@ class _QuickRequestPageState extends State<QuickRequestPage>
                 ],
               );
             },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBudgetField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.attach_money,
-              size: 18,
-              color: Color(AppColors.primaryColor),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              "الميزانية",
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Color(AppColors.primaryColor),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _budgetController,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            hintText: "المبلغ",
-            suffixText: "ج.م",
-            filled: true,
-            fillColor: Color(AppColors.cardsColor),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
-            ),
-            errorText: _priceErrorMessage,
-            errorStyle: const TextStyle(fontSize: 10),
-          ),
-        ),
-        // if (selectedService != null && selectedService!.minPrice != null)
-        Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, size: 10, color: Colors.grey[500]),
-              const SizedBox(width: 4),
-              // Text(
-              //   "الحد الأدنى: ${selectedService!.minPrice} ج.م",
-              //   style: TextStyle(fontSize: 9, color: Colors.grey[500]),
-              // ),
-            ],
           ),
         ),
       ],
@@ -650,15 +597,16 @@ class _QuickRequestPageState extends State<QuickRequestPage>
       // تحويل الصور إلى مسارات
       List<String> imagePaths = _selectedImages.map((img) => img.path).toList();
 
+      // DELETED: Removed budget from the request creation
       // استدعاء الـ Cubit لإنشاء الطلب
       await context.read<ServiceRequestCubit>().createServiceRequest(
         description: _descController.text.trim(),
         serviceId: selectedService!.id!,
-        budget: double.parse(_budgetController.text.trim()),
+        // budget: double.parse(_budgetController.text.trim()), // DELETED: Removed budget parameter
         latitude: _selectedLatitude!,
         longitude: _selectedLongitude!,
         locationAddress: _selectedAddress,
-        imagePaths: imagePaths.isNotEmpty ? imagePaths : null,
+        imagePaths: imagePaths.isNotEmpty ? imagePaths : null, budget: 0,
       );
 
       // إغلاق مؤشر التحميل
@@ -666,25 +614,19 @@ class _QuickRequestPageState extends State<QuickRequestPage>
 
       // عرض رسالة نجاح
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Center(child: Text("تم إرسال الطلب بنجاح")),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
-          ),
-        );
+        SnackBarHelper.showSuccessSnackBar(context, "تم إرسال الطلب بنجاح");
       }
 
       // ✅ تنظيف النموذج
       setState(() {
         selectedService = null;
         _descController.clear();
-        _budgetController.clear();
+        // _budgetController.clear(); // DELETED: Removed budget controller clear
         _selectedImages.clear();
         _selectedAddress = '';
         _selectedLatitude = null;
         _selectedLongitude = null;
-        _priceErrorMessage = null;
+        // _priceErrorMessage = null; // DELETED: Removed price error message reset
       });
 
       // ✅ الانتظار ثانيتين
@@ -701,12 +643,7 @@ class _QuickRequestPageState extends State<QuickRequestPage>
 
       // عرض رسالة خطأ
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Center(child: Text("فشل إرسال الطلب: ${e.toString()}")),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackBarHelper.showErrorSnackBar(context, "فشل إرسال الطلب: ${e.toString()}");
       }
     }
   }

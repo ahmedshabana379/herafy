@@ -97,7 +97,7 @@ class _ProviderRegisterPageState extends State<ProviderRegisterPage> {
                   Icon(Icons.handyman_rounded, color: Color(0xFF2b2854)),
                   const SizedBox(width: 8),
                   const Text(
-                    "إنضم إلي حرفي",
+                    "إنضم إلي  حِرَفِيّ",
                     style: TextStyle(
                       fontSize: 25,
                       fontWeight: FontWeight.bold,

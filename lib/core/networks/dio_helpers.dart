@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/networks/end_points.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 class DioHelper {
   static Dio? dio;
@@ -16,7 +17,15 @@ class DioHelper {
           'Accept': 'application/json',
         },
       ),
+      
     );
+    dio!.interceptors.add(PrettyDioLogger(
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: true,
+      responseBody: true,
+      error: true,
+    ));
   }
 
   // ميثود مساعدة لجلب التوكن ووضعه في الهيدر

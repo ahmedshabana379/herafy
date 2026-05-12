@@ -31,18 +31,19 @@ class LocationService {
     
     if (!serviceEnabled) {
       // عرض dialog للمستخدم
+      if (!context.mounted) return false;
       final result = await showDialog<bool>(
         context: context,
-        barrierDismissible: false, // منع المستخدم من الخروج
-        builder: (context) => WillPopScope(
-          onWillPop: () async => false, // منع الضغط على back
+        barrierDismissible: false,
+        builder: (ctx) => PopScope(
+          canPop: false,
           child: AlertDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
             title: Row(
               children: [
-                Icon(Icons.location_off, color: Colors.orange, size: 28),
+                const Icon(Icons.location_off, color: Colors.orange, size: 28),
                 const SizedBox(width: 12),
                 const Text(
                   "خدمة الموقع",
@@ -83,15 +84,14 @@ class LocationService {
             actions: [
               TextButton(
                 onPressed: () async {
-                  // فتح إعدادات الموقع
                   await Geolocator.openLocationSettings();
-                  Navigator.pop(context, false);
+                  if (ctx.mounted) Navigator.pop(ctx, false);
                 },
                 child: const Text("فتح الإعدادات"),
               ),
               ElevatedButton(
-                onPressed: () async {
-                  Navigator.pop(context, true);
+                onPressed: () {
+                  if (ctx.mounted) Navigator.pop(ctx, true);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
@@ -107,7 +107,6 @@ class LocationService {
       );
       
       if (result == true) {
-        // التحقق مرة أخرى بعد محاولة المستخدم
         return await checkLocationPermission();
       }
       return false;
@@ -123,11 +122,11 @@ class LocationService {
     }
     
     if (permission == LocationPermission.deniedForever) {
-      // عرض dialog للمستخدم أن الصلاحية ممنوعة نهائياً
+      if (!context.mounted) return false;
       await showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
+        builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -137,13 +136,15 @@ class LocationService {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                if (ctx.mounted) Navigator.pop(ctx);
+              },
               child: const Text("إلغاء"),
             ),
             ElevatedButton(
               onPressed: () async {
                 await openAppSettings();
-                Navigator.pop(context);
+                if (ctx.mounted) Navigator.pop(ctx);
               },
               child: const Text("فتح الإعدادات"),
             ),

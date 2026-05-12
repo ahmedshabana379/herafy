@@ -1,51 +1,81 @@
 class PostModel {
   final int id;
+  final int clientId;
+  final int governorateId;
+  final int regionId;
   final String title;
-  final String? description;
+  final String description;
+  final DateTime createdAt;
   final List<String> imageUrls;
-  final String? clientName;
-  final String? clientPictureUrl;
-  final String? createdAt;
   final int commentsCount;
+  final List<TopReaction> topReactions;
   final bool isProvider;
-  final List<dynamic> topReactions;
-  final bool isReacted;
-  final int? myReactionType;
+  final int? providerId;
+  final String clientName;
+  final String? clientPictureUrl;
+  final int? userReaction;
+
   PostModel({
     required this.id,
+    required this.clientId,
+    required this.governorateId,
+    required this.regionId,
     required this.title,
-    this.description,
-    this.imageUrls = const [],
-    this.clientName,
+    required this.description,
+    required this.createdAt,
+    required this.imageUrls,
+    required this.commentsCount,
+    required this.topReactions,
+    required this.isProvider,
+    this.providerId,
+    required this.clientName,
     this.clientPictureUrl,
-    this.createdAt,
-    this.commentsCount = 0,
-    this.isProvider = false,
-    this.topReactions = const [],
-    required this.isReacted,
-    this.myReactionType,
+    this.userReaction,
   });
 
-  factory PostModel.fromJson(Map<String, dynamic> json) {
-    print(
-      "POST REACTION DATA: isReacted=${json['isReacted']}, myReaction=${json['myReactionType']}",
-    );
+  // --- الهيدر الخاص بحساب إجمالي التفاعلات ---
+  int get totalReactionsCount {
+    return topReactions.fold(0, (sum, element) => sum + element.count);
+  }
 
+  factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
-      isReacted: json['isReacted'] ?? false,
-      myReactionType: json['myReactionType'],
       id: json['id'] ?? 0,
+      clientId: json['clientId'] ?? 0,
+      governorateId: json['governorateId'] ?? 0,
+      regionId: json['regionId'] ?? 0,
       title: json['title'] ?? '',
-      description: json['description'],
-      imageUrls: json['imageUrls'] != null
-          ? List<String>.from(json['imageUrls'])
-          : [],
-      clientName: json['clientName'],
-      clientPictureUrl: json['clientPictureUrl'],
-      createdAt: json['createdAt'],
+      description: json['description'] ?? '',
+      createdAt: json['createdAt'] != null 
+          ? DateTime.parse(json['createdAt']) 
+          : DateTime.now(),
+      imageUrls: List<String>.from(json['imageUrls'] ?? []),
       commentsCount: json['commentsCount'] ?? 0,
+      topReactions: (json['topReactions'] as List?)
+              ?.map((e) => TopReaction.fromJson(e))
+              .toList() ?? [],
       isProvider: json['isProvider'] ?? false,
-      topReactions: json['topReactions'] ?? [],
+      providerId: json['providerId'],
+      clientName: json['clientName'] ?? 'Unknown',
+      clientPictureUrl: json['clientPictureUrl'],
+      userReaction: json['userReaction'],
+    );
+  }
+}
+
+class TopReaction {
+  final int reactionType;
+  final int count;
+
+  TopReaction({
+    required this.reactionType,
+    required this.count,
+  });
+
+  factory TopReaction.fromJson(Map<String, dynamic> json) {
+    return TopReaction(
+      reactionType: json['reactionType'] ?? 0,
+      count: json['count'] ?? 0,
     );
   }
 }

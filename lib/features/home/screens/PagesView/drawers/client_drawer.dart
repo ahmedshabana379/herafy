@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/components/snack_bar_helper.dart';
+import 'package:herafy/core/networks/end_points.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
@@ -11,6 +12,11 @@ import 'package:herafy/features/screens/edit_account_page.dart';
 class AppDrawer extends StatelessWidget {
   final int receivedOffersCount;
   final UserModel? user;
+  String _getFullImageUrl(String? path) {
+    if (path == null || path.isEmpty) return "";
+    String domain = AppEndPoints.baseUrl.replaceAll('/api/', '');
+    return domain.endsWith('/') ? "$domain$path" : "$domain/$path";
+  }
 
   const AppDrawer({super.key, this.receivedOffersCount = 3, this.user});
   @override
@@ -35,11 +41,11 @@ class AppDrawer extends StatelessWidget {
                     Navigator.pushNamed(context, EditAccountPage.routeName);
                   },
                 ),
-                _buildMenuItem(
-                  icon: Icons.history_rounded,
-                  title: "المحفوظات ",
-                  onTap: () {},
-                ),
+                // _buildMenuItem(
+                //   icon: Icons.history_rounded,
+                //   title: "المحفوظات ",
+                //   onTap: () {},
+                // ),
                 _buildMenuItem(
                   icon: Icons.history_rounded,
                   title: "خدماتك ",
@@ -75,7 +81,7 @@ class AppDrawer extends StatelessWidget {
     return BlocBuilder<AuthCubit, AuthState>(
       buildWhen: (previous, current) =>
           current is UserDataUpdated ||
-          current is LogoutSuccess ||
+          current is LoginSuccess ||
           current is LogoutSuccess,
       builder: (context, state) {
         final user = context.read<AuthCubit>().currentUser;
@@ -109,7 +115,7 @@ class AppDrawer extends StatelessWidget {
                   radius: 36,
                   backgroundColor: const Color(0xFFF3F3F7),
                   backgroundImage: user?.pictureUrl != null
-                      ? NetworkImage(user!.pictureUrl!)
+                      ? NetworkImage(_getFullImageUrl(user!.pictureUrl!))
                       : null,
                   child: user?.pictureUrl == null
                       ? const Icon(

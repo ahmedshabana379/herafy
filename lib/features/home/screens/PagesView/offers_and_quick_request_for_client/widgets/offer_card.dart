@@ -8,7 +8,7 @@ class OfferCard extends StatelessWidget {
     required this.offer,
     required this.onAccept,
     required this.onReject,
-    required this.onTrack, // جديد: لمتابعة الخدمة بعد القبول
+    required this.onTrack,
   });
 
   final Map<String, dynamic> offer;
@@ -18,8 +18,8 @@ class OfferCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = offer['status'] ?? 'pending'; // pending, accepted, completed, rejected
-    
+    final status = offer['status'] ?? 'pending';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -39,138 +39,111 @@ class OfferCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // صورة مقدم الخدمة
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: Color(AppColors.cardsColor),
-                  child: Icon(
-                    Icons.person,
-                    size: 30,
-                    color: Color(AppColors.primaryColor),
-                  ),
-                ),
+                _buildProviderImage(),
                 const SizedBox(width: 12),
 
-                // الاسم والمهنة
+                // الاسم والرسالة
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Text(
-                            offer["name"],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          Expanded(
+                            child: Text(
+                              offer["name"] ?? "حرفي",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _buildStatusBadge(status),
+                          // لـ:
+                          if (status == 'pending')
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                "${offer['price']} ج.م",
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            )
+                          else
+                            _buildStatusBadge(status),
                         ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        offer["job"],
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(AppColors.secondaryColor),
-                        ),
                       ),
                       const SizedBox(height: 4),
-                      // الريتينج والشغل المنجز
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star_rounded,
-                            size: 14,
-                            color: Colors.amber[700],
+                      // رسالة الحرفي
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          offer["message"] ?? "لا توجد رسالة",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[700],
+                            height: 1.4,
                           ),
-                          const SizedBox(width: 2),
-                          Text(
-                            "${offer["rating"]}",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 14,
-                            color: Color(AppColors.primaryColor),
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            "${offer["completedJobs"]} مهمة",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(AppColors.secondaryColor),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-
-                // السعر
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: status == 'accepted' 
-                        ? Colors.green 
-                        : (status == 'rejected' 
-                            ? Colors.red 
-                            : Color(AppColors.primaryColor)),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    "${offer["price"]} ج.م",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // الديسكريبشن لو موجود
-          if (offer["description"] != null && offer["description"].toString().isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Color(AppColors.cardsColor),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  offer["description"],
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(AppColors.secondaryColor),
-                    height: 1.5,
-                  ),
-                ),
-              ),
-            ),
-
-          // الأزرار (تختلف حسب الحالة)
+          // السعر والأزرار
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            child: _buildButtons(status),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              children: [const SizedBox(height: 12), _buildButtons(status)],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProviderImage() {
+    final imageUrl = offer['providerPictureUrl'];
+
+    if (imageUrl != null && imageUrl.toString().isNotEmpty) {
+      return CircleAvatar(
+        radius: 28,
+        backgroundImage: NetworkImage(
+          'https://iti-final-project.runasp.net/$imageUrl',
+        ),
+        onBackgroundImageError: (_, __) => _buildDefaultAvatar(),
+      );
+    }
+
+    return _buildDefaultAvatar();
+  }
+
+  Widget _buildDefaultAvatar() {
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: Color(AppColors.cardsColor),
+      child: Icon(Icons.person, size: 30, color: Color(AppColors.primaryColor)),
     );
   }
 
@@ -202,7 +175,7 @@ class OfferCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
@@ -218,101 +191,83 @@ class OfferCard extends StatelessWidget {
     );
   }
 
- // في OfferCard - تعديل _buildButtons
-
-Widget _buildButtons(String status) {
-  if (status == 'accepted') {
-    // عرض زر "متابعة الخدمة"
-    return Row(
-      children: [
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: onTrack,
-            icon: const Icon(Icons.track_changes, size: 18),
-            label: const Text("متابعة الخدمة"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Color(AppColors.primaryColor),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+  Widget _buildButtons(String status) {
+    if (status == 'accepted') {
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: onTrack,
+              icon: const Icon(Icons.track_changes, size: 18),
+              label: const Text("متابعة الخدمة"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(AppColors.primaryColor),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
-        ),
-      ],
-    );
-  }
-  
-  if (status == 'completed') {
-    // ✅ بدل زر التقييم، نعرض نص "تم التقييم" أو "مكتمل"
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.teal[50],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Center(
-        child: Text(
-          "✅ تم إكمال الخدمة",
-          style: TextStyle(color: Colors.teal[700], fontWeight: FontWeight.w500),
-        ),
-      ),
-    );
-  }
-  
-  if (status == 'rejected') {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Center(
-        child: Text(
-          "❌ تم رفض هذا العرض",
-          style: TextStyle(color: Colors.red[400], fontWeight: FontWeight.w500),
-        ),
-      ),
-    );
-  }
-  
-  // pending - أزرار قبول ورفض
-  return Row(
-    children: [
-      Expanded(
-        child: OutlinedButton.icon(
-          onPressed: onReject,
-          icon: const Icon(Icons.close, size: 16),
-          label: const Text("رفض"),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.redAccent,
-            side: const BorderSide(color: Colors.redAccent),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-        ),
-      ),
-      const SizedBox(width: 12),
-      Expanded(
-        child: ElevatedButton.icon(
-          onPressed: onAccept,
-          icon: const Icon(Icons.check, size: 16),
-          label: const Text("قبول"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(AppColors.primaryColor),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-        ),
-      ),
-    ],
-  );
-}
+        ],
+      );
+    }
 
+    if (status == 'completed') {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.teal[50],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            "✅ تم إكمال الخدمة",
+            style: TextStyle(
+              color: Colors.teal[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (status == 'rejected') {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Center(
+          child: Text(
+            "❌ تم رفض هذا العرض",
+            style: TextStyle(
+              color: Colors.red[400],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // pending - زرار قبول بس
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onAccept,
+        icon: const Icon(Icons.check, size: 16),
+        label: const Text("قبول العرض"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color(AppColors.primaryColor),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
+    );
+  }
 }

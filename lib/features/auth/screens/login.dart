@@ -6,7 +6,6 @@ import 'package:herafy/core/components/app_button.dart';
 import 'package:herafy/core/components/custom_text_field.dart';
 import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/components/text-field-label.dart';
-import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/cubits/auth_state.dart';
@@ -38,53 +37,17 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void saveUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (rememberMe) {
-      await prefs.setString('saved_email', _emailController.text);
-      await prefs.setBool(
-        "saved_password",
-        _passwordController.text.isNotEmpty,
-      );
-      await prefs.setBool('remember_me', true);
-    } else {
-      await prefs.remove('saved_email');
-      await prefs.remove('remember_me');
-    }
+  final prefs = await SharedPreferences.getInstance();
+  if (rememberMe) {
+    await prefs.setString('saved_email', _emailController.text);
+    await prefs.setString('saved_password', _passwordController.text); 
+    await prefs.setBool('remember_me', true);
+  } else {
+    await prefs.remove('saved_email');
+    await prefs.remove('saved_password'); 
+    await prefs.remove('remember_me');
   }
-  // Future<String> _determineInitialRoute() async {
-  //   try {
-  //     await _authCubit.loadUserData();
-  //     final token = await CacheHelper.getToken();
-  //     final user = _authCubit.currentUser;
-
-  //     if (token != null && token.isNotEmpty && user != null) {
-
-  //       // 🟡 لو لسه مكملش بياناته
-  //       if (user.status == 0 ) {
-  //         return CompleteDataScreen.routeName;
-  //       }
-
-  //       // 🟠 لو Provider ومستني موافقة
-  //       if (user.isProvider && user.status == 1) {
-  //         return HomePage.routeName;
-  //       }
-
-  //       // 🔴 لو مرفوض
-  //       // if (user.status == 3) {
-  //       //   return LoginPage.routeName;
-  //       // }
-
-  //       // 🟢 Approved
-  //       if (user.status == 2 || user.status == 5) {
-  //         return HomePage.routeName;
-  //       }
-  //     }
-  //   } catch (e) {
-  //     debugPrint('Error: $e');
-  //   }
-
-  //   return LoginPage.routeName;
-  // }
+}
 
   @override
   void initState() {
@@ -117,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
             Icon(Icons.handyman_rounded, color: Color(0xFF2b2854)),
             const SizedBox(width: 8),
             const Text(
-              "حرفي",
+              " حِرَفِيّ",
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.bold,
@@ -229,7 +192,7 @@ class _LoginPageState extends State<LoginPage> {
                         isButtonEnabled: state is! LoginLoading,
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            // Perform login action
+                            FocusScope.of(context).unfocus();
                             context.read<AuthCubit>().login(
                               email: _emailController.text,
                               password: _passwordController.text,
@@ -242,6 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                     listener: (context, state) {
                       if (state is LoginSuccess) {
                         saveUserData();
+                        FocusScope.of(context).unfocus();
                         final user = context.read<AuthCubit>().currentUser;
 
                         if (user == null) return;

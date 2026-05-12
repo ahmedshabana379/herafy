@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 
 class RequestMapScreen extends StatefulWidget {
   const RequestMapScreen({
@@ -65,11 +66,7 @@ class _RequestMapScreenState extends State<RequestMapScreen> {
         _isLoadingDistance = false;
       });
 
-      print("📍 موقعي الحالي: ${position.latitude}, ${position.longitude}");
-      print("📍 موقع العميل: ${widget.latitude}, ${widget.longitude}");
-      print("📏 المسافة: ${distanceInMeters.toStringAsFixed(0)} متر");
     } catch (e) {
-      print("خطأ في جلب الموقع: $e");
       setState(() {
         _isLoadingDistance = false;
       });
@@ -93,20 +90,9 @@ class _RequestMapScreenState extends State<RequestMapScreen> {
 
       _mapController.move(LatLng(position.latitude, position.longitude), 15);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("تم التمركز إلى موقعك الحالي"),
-          duration: Duration(seconds: 1),
-          backgroundColor: Colors.green,
-        ),
-      );
+      SnackBarHelper.showSuccessSnackBar(context, "تم التمركز إلى موقعك الحالي");
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("تعذر الحصول على موقعك الحالي"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      SnackBarHelper.showErrorSnackBar(context, "تعذر الحصول على موقعك الحالي");
     }
   }
 

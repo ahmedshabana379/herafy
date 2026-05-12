@@ -7,17 +7,19 @@ class UserModel {
   final List<String> roles;
   final bool? isAuthenticated;
   final bool? isProfileComplete;
-  final int
-  status; // 0=Pending, 1=UnderReview, 2=Approved, 3=Rejected, 4=Suspended, 5=Completed
+  final int? credits;  // <--- تغيير من int إلى int? (اختياري)
+  final int status;
   final bool? isProviderFromServer;
   final int? gender;
   final String? phoneNumber;
   final int? governorateId;
   final int? regionId;
   final String? birthDate;
-  // الـ ID عشان نبعته في الـ Update
-  final String? governorateName; // للعرض في البروفايل
+  final String? governorateName;
   final String? regionName;
+  final String? refreshToken;
+  final int? jobsCount;
+
   UserModel({
     this.firstName,
     this.lastName,
@@ -27,6 +29,7 @@ class UserModel {
     this.roles = const [],
     this.isAuthenticated,
     this.isProfileComplete = false,
+    this.credits,  // <--- بدون required، وبدون قيمة افتراضية
     this.status = 0,
     this.isProviderFromServer,
     this.gender,
@@ -36,6 +39,7 @@ class UserModel {
     this.birthDate,
     this.governorateName,
     this.regionName,
+    this.refreshToken, this.jobsCount,
   });
 
   bool get isProvider =>
@@ -62,6 +66,7 @@ class UserModel {
     final int status = json['status'] ?? 0;
 
     return UserModel(
+      jobsCount: json["jobsCount"],
       firstName: json['firstName'],
       lastName: json['lastName'],
       email: json['email'],
@@ -79,11 +84,14 @@ class UserModel {
       birthDate: json['birthDate'],
       governorateName: json['governorateName'],
       regionName: json['regionName'],
+      refreshToken: json['refreshToken'],
+      credits: json["credits"], // لو العميل مفيش credits هتاخد null
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      "jobsCount" : jobsCount,
       'firstName': firstName,
       'lastName': lastName,
       'email': email,
@@ -101,10 +109,13 @@ class UserModel {
       'birthDate': birthDate,
       'governorateName': governorateName,
       'regionName': regionName,
+      'refreshToken': refreshToken,
+      'credits': credits, // هيبقى null للعميل، رقم للفني
     };
   }
 
   UserModel copyWith({
+    
     bool? isProviderFromServer,
     String? firstName,
     String? lastName,
@@ -122,6 +133,9 @@ class UserModel {
     String? birthDate,
     String? governorateName,
     String? regionName,
+    String? refreshToken,
+    int? credits, // اختياري
+    int? jobsCount
   }) {
     return UserModel(
       firstName: firstName ?? this.firstName,
@@ -141,6 +155,9 @@ class UserModel {
       birthDate: birthDate ?? this.birthDate,
       governorateName: governorateName ?? this.governorateName,
       regionName: regionName ?? this.regionName,
+      refreshToken: refreshToken ?? this.refreshToken,
+      credits: credits ?? this.credits,
+      jobsCount: jobsCount 
     );
   }
 }

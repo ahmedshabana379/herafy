@@ -1,6 +1,7 @@
 // lib/features/home/screens/PagesView/offers_and_quick_request_for_client/widgets/review_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 
 class ReviewDialog extends StatefulWidget {
@@ -8,14 +9,14 @@ class ReviewDialog extends StatefulWidget {
     super.key,
     required this.providerName,
     required this.serviceType,
-    required this.agreedPrice,
+    // required this.agreedPrice,
     required this.onReviewSubmitted,
   });
 
   final String providerName;
   final String serviceType;
-  final double agreedPrice;
-  final Function(double rating, String comment, double paidAmount) onReviewSubmitted;
+  // final double agreedPrice;
+  final Function(double rating, String comment) onReviewSubmitted; // DELETED: Removed paidAmount parameter
 
   @override
   State<ReviewDialog> createState() => _ReviewDialogState();
@@ -24,65 +25,58 @@ class ReviewDialog extends StatefulWidget {
 class _ReviewDialogState extends State<ReviewDialog> {
   double _rating = 0;
   String _comment = '';
-  final TextEditingController _paidAmountController = TextEditingController();
-  String? _amountError;
+  // DELETED: Removed paid amount controller
+  // final TextEditingController _paidAmountController = TextEditingController();
+  // String? _amountError;
 
   @override
   void initState() {
     super.initState();
-    _paidAmountController.text = widget.agreedPrice.toStringAsFixed(0);
+    // DELETED: Removed paid amount controller initialization
+    // _paidAmountController.text = widget.agreedPrice.toStringAsFixed(0);
   }
 
   @override
   void dispose() {
-    _paidAmountController.dispose();
+    // DELETED: Removed paid amount controller disposal
+    // _paidAmountController.dispose();
     super.dispose();
   }
 
-  void _validateAmount() {
-    final amount = double.tryParse(_paidAmountController.text);
-    if (amount == null || amount <= 0) {
-      setState(() {
-        _amountError = "من فضلك أدخل مبلغ صحيح";
-      });
-    } else if (amount > widget.agreedPrice + 100) {
-      setState(() {
-        _amountError = "المبلغ أكبر من المتوقع بكثير";
-      });
-    } else {
-      setState(() {
-        _amountError = null;
-      });
-    }
-  }
+  // DELETED: Removed amount validation method
+  // void _validateAmount() {
+  //   final amount = double.tryParse(_paidAmountController.text);
+  //   if (amount == null || amount <= 0) {
+  //     setState(() {
+  //       _amountError = "من فضلك أدخل مبلغ صحيح";
+  //     });
+  //   } else if (amount > widget.agreedPrice + 100) {
+  //     setState(() {
+  //       _amountError = "المبلغ أكبر من المتوقع بكثير";
+  //     });
+  //   } else {
+  //     setState(() {
+  //       _amountError = null;
+  //     });
+  //   }
+  // }
 
   void _submitReview() {
     if (_rating == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("من فضلك قيم الخدمة")),
-      );
-      return;
-    }
-    
-    final paidAmount = double.tryParse(_paidAmountController.text);
-    if (paidAmount == null || paidAmount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("من فضلك أدخل المبلغ المدفوع")),
-      );
+      SnackBarHelper.showWarningSnackBar(context, "من فضلك قيم الخدمة");
       return;
     }
 
-    // استدعاء callback
-    widget.onReviewSubmitted(_rating, _comment, paidAmount);
-    
-    Navigator.pop(context); // إغلاق الـ Dialog فقط
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("شكراً لتقييمك للخدمة"),
-        backgroundColor: Colors.green,
-      ),
-    );
+    // DELETED: Removed paid amount validation
+    // final paidAmount = double.tryParse(_paidAmountController.text);
+    // if (paidAmount == null || paidAmount <= 0) {
+    //   SnackBarHelper.showWarningSnackBar(context, "من فضلك أدخل المبلغ المدفوع");
+    //   return;
+    // }
+
+    // أغلق الدايالوج أولاً ثم استدع الكال باك
+    Navigator.pop(context);
+    widget.onReviewSubmitted(_rating, _comment); // DELETED: Removed paidAmount parameter
   }
 
   @override
@@ -166,63 +160,63 @@ class _ReviewDialogState extends State<ReviewDialog> {
             ),
             const SizedBox(height: 16),
             
-            // Paid Amount Field
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Color(AppColors.cardsColor),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.attach_money, size: 18, color: Color(AppColors.primaryColor)),
-                      const SizedBox(width: 6),
-                      Text(
-                        "المبلغ المدفوع للحرفي",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Color(AppColors.primaryColor),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "*",
-                        style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _paidAmountController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onChanged: (_) => _validateAmount(),
-                    decoration: InputDecoration(
-                      hintText: "المبلغ اللي دفعته",
-                      suffixText: "ج.م",
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide.none,
-                      ),
-                      errorText: _amountError,
-                      errorStyle: const TextStyle(fontSize: 10),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "المبلغ المتفق عليه: ${widget.agreedPrice.toStringAsFixed(0)} ج.م",
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+            // DELETED: Removed entire Paid Amount Field section
+            // Container(
+            //   padding: const EdgeInsets.all(12),
+            //   decoration: BoxDecoration(
+            //     color: Color(AppColors.cardsColor),
+            //     borderRadius: BorderRadius.circular(12),
+            //   ),
+            //   child: Column(
+            //     crossAxisAlignment: CrossAxisAlignment.start,
+            //     children: [
+            //       Row(
+            //         children: [
+            //           Icon(Icons.attach_money, size: 18, color: Color(AppColors.primaryColor)),
+            //           const SizedBox(width: 6),
+            //           Text(
+            //             "المبلغ المدفوع للحرفي",
+            //             style: TextStyle(
+            //               fontSize: 13,
+            //               fontWeight: FontWeight.w500,
+            //               color: Color(AppColors.primaryColor),
+            //             ),
+            //           ),
+            //           const SizedBox(width: 4),
+            //           Text(
+            //             "*",
+            //             style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            //           ),
+            //         ],
+            //       ),
+            //       const SizedBox(height: 8),
+            //       TextField(
+            //         controller: _paidAmountController,
+            //         keyboardType: TextInputType.number,
+            //         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            //         onChanged: (_) => _validateAmount(),
+            //         decoration: InputDecoration(
+            //           hintText: "المبلغ اللي دفعته",
+            //           suffixText: "ج.م",
+            //           filled: true,
+            //           fillColor: Colors.white,
+            //           border: OutlineInputBorder(
+            //             borderRadius: BorderRadius.circular(10),
+            //             borderSide: BorderSide.none,
+            //           ),
+            //           errorText: _amountError,
+            //           errorStyle: const TextStyle(fontSize: 10),
+            //         ),
+            //       ),
+            //       const SizedBox(height: 8),
+            //       Text(
+            //         "المبلغ المتفق عليه: ${widget.agreedPrice.toStringAsFixed(0)} ج.م",
+            //         style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+            //       ),
+            //     ],
+            //   ),
+            // ),
+            // const SizedBox(height: 16),
             
             // Comment Field
             TextField(

@@ -22,7 +22,13 @@ class CacheHelper {
     return rule != null ? rule == 'true' : false;
   }
 
+static Future<void> saveRefreshToken(String token) async {
+  await storage.write(key: 'refresh_token', value: token);
+}
 
+static Future<String?> getRefreshToken() async {
+  return await storage.read(key: 'refresh_token');
+}
   // save token
   static Future<void> saveToken(String token) async {
     return await storage.write(key: 'token', value: token);
@@ -37,26 +43,38 @@ class CacheHelper {
   }
 
   // save user data
-  static Future<void> saveUserData(UserModel user) async {
-    try {
-      await storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
-    } catch (e) {
-      // Handle error if needed
+ static Future<void> saveUserData(UserModel user) async {
+  try {
+    await storage.write(key: 'user_data', value: jsonEncode(user.toJson()));
+    if (user.accessToken != null && user.accessToken!.isNotEmpty) {
+      await storage.write(key: 'token', value: user.accessToken);
     }
+    if (user.refreshToken != null && user.refreshToken!.isNotEmpty) {
+      await storage.write(key: 'refresh_token', value: user.refreshToken);
+    }
+  } catch (e) {
+    // Handle error if needed
   }
+}
   
   // get user data
   static Future<UserModel?> getUserData() async {
-    try {
-      final userData = await storage.read(key: 'user_data');
-      if (userData != null) {
-        return UserModel.fromJson(jsonDecode(userData));
-      }
-      return null;
-    } catch (e) {
-      return null;
+  try {
+    final userData = await storage.read(key: 'user_data');
+    if (userData != null && userData.isNotEmpty) {
+      return UserModel.fromJson(jsonDecode(userData));
     }
+    return null;
+  } catch (e) {
+    return null;
   }
+}
+static String getFullImageUrl(String? path) {
+  if (path == null || path.isEmpty) return '';
+  const String baseUrl = 'https://iti-final-project.runasp.net';
+  if (path.startsWith('http')) return path;
+  return '$baseUrl/$path';
+}
 
   // Save provider registration step 1 data (basic info)
   static Future<void> saveProviderStep1Data({
@@ -170,4 +188,5 @@ class CacheHelper {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_themeMode) ?? false;
   }
+  
 }

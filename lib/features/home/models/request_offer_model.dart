@@ -1,37 +1,39 @@
 class RequestOfferModel {
   final int id;
-  final int serviceRequestId;
-  final int providerId;
+  final int? serviceRequestId; // بيجي في الـ Create بس
+  final int? providerId;      // بيجي في الـ Get بس
   final String? providerName;
   final String? providerPictureUrl;
   final double price;
   final String message;
-  final String status; // Pending, Accepted, Rejected
-  final String createdAt;
+  final DateTime createdAt;
+  final String? status; // ضفته عشان لو محتاجه في الـ UI لاحقاً
 
   RequestOfferModel({
     required this.id,
-    required this.serviceRequestId,
-    required this.providerId,
+    this.serviceRequestId,
+    this.providerId,
     this.providerName,
     this.providerPictureUrl,
     required this.price,
     required this.message,
-    required this.status,
     required this.createdAt,
+    this.status,
   });
 
   factory RequestOfferModel.fromJson(Map<String, dynamic> json) {
     return RequestOfferModel(
-      id: json['id'] ?? 0,
-      serviceRequestId: json['serviceRequestId'] ?? 0,
-      providerId: json['providerId'] ?? 0,
+      id: json['id'],
+      // بنستخدم ?? عشان لو الـ Key مش موجود الـ App ميكراشش
+      serviceRequestId: json['serviceRequestId'],
+      providerId: json['providerId'],
       providerName: json['providerName'],
       providerPictureUrl: json['providerPictureUrl'],
-      price: (json['price'] ?? 0).toDouble(),
-      message: json['message'] ?? '',
-      status: json['status'] ?? 'Pending',
-      createdAt: json['createdAt'] ?? DateTime.now().toIso8601String(),
+      // السيرفر بيبعت الـ price أحياناً int وأحياناً double، الـ .toDouble() بتحل المشكلة دي
+      price: (json['price'] as num).toDouble(),
+      message: json['message'] ?? "",
+      createdAt: DateTime.parse(json['createdAt']),
+      status: json['status'], 
     );
   }
 
@@ -44,8 +46,7 @@ class RequestOfferModel {
       'providerPictureUrl': providerPictureUrl,
       'price': price,
       'message': message,
-      'status': status,
-      'createdAt': createdAt,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 }

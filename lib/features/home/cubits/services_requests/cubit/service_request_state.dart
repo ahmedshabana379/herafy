@@ -38,7 +38,7 @@ class GetClientServiceRequestsError extends ServiceRequestState {
 class GetProviderAvailableRequestsLoading extends ServiceRequestState {}
 
 class GetProviderAvailableRequestsSuccess extends ServiceRequestState {
-  final List<ServiceRequestModelProvider> requests;
+  final List<ServiceRequestProviderModel> requests;
   GetProviderAvailableRequestsSuccess(this.requests);
 }
 
@@ -207,4 +207,40 @@ class CreateReviewSuccess extends ServiceRequestState {
 class CreateReviewError extends ServiceRequestState {
   final String message;
   CreateReviewError(this.message);
+}
+
+// ============ Complete Service Request States ============
+class CompleteServiceRequestLoading extends ServiceRequestState {}
+class CompleteServiceRequestSuccess extends ServiceRequestState {}
+class CompleteServiceRequestError extends ServiceRequestState {
+  final String message;
+  CompleteServiceRequestError(this.message);
+}
+
+// ============ Cancel Service Request States ============
+class CancelServiceRequestLoading extends ServiceRequestState {}
+class CancelServiceRequestSuccess extends ServiceRequestState {}
+class CancelServiceRequestError extends ServiceRequestState {
+  final String message;
+  CancelServiceRequestError(this.message);
+}
+
+// ============ Get Service Request By ID States ============
+class GetServiceRequestByIdLoading extends ServiceRequestState {}
+class GetServiceRequestByIdSuccess extends ServiceRequestState {
+  final ServiceRequestModel request;
+  GetServiceRequestByIdSuccess(this.request);
+}
+class GetServiceRequestByIdError extends ServiceRequestState {
+  final String message;
+  GetServiceRequestByIdError(this.message);
+}
+// ============ Silent Refresh State (بدون Loading) ============
+class ProviderDataRefreshed extends ServiceRequestState {}
+
+// ============ Offer Accepted Notification State ============
+class OfferAcceptedNotification extends ServiceRequestState {
+  final int serviceRequestId;
+  final double price;
+  OfferAcceptedNotification({required this.serviceRequestId, required this.price});
 }

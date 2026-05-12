@@ -13,7 +13,7 @@ import 'package:herafy/features/home/screens/PagesView/provider_dashboard/pages/
 import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/quick_request_page.dart';
 import 'package:herafy/features/home/widgets/bar_of_tapbar_buttons.dart';
 import 'package:herafy/features/home/widgets/post_type_sheet.dart';
-import 'package:http/http.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -66,7 +66,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final isProvider = _user?.isProvider == true;
     final int status = _user?.status ?? 0;
-    final bool isProfileComplete = _user?.isProfileComplete ?? false;
 
     final showCompleteProfileCta =
         isProvider && status == 0 && _selectedIndex == 0;
@@ -78,8 +77,6 @@ class _HomePageState extends State<HomePage> {
         !_approvedBannerDismissed &&
         _selectedIndex == 0;
     final showRejectedCta = isProvider && status == 3;
-    final showProviderDashboard =
-        isProvider && status == 2 && _selectedIndex == 0;
 
     return Scaffold(
       floatingActionButton: _selectedIndex == 0
@@ -116,7 +113,7 @@ class _HomePageState extends State<HomePage> {
             Icon(Icons.handyman_rounded, color: Color(0xFF2b2854)),
             const SizedBox(width: 8),
             const Text(
-              "حرفي",
+              " حِرَفِيّ",
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.bold,

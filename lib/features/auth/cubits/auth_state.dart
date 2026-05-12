@@ -126,3 +126,17 @@ class UpdateProfileError extends AuthState {
   UpdateProfileError(this.message);
 }
 class UserDataUpdated extends AuthState {}
+
+class FetchProfileLoading extends AuthState {}
+
+class FetchProfileSuccess extends AuthState {}
+
+class FetchProfileError extends AuthState {
+  final String message;
+  FetchProfileError(this.message);
+}
+
+class AuthSuccess extends AuthState {
+  final UserModel user;
+  AuthSuccess(this.user);
+}

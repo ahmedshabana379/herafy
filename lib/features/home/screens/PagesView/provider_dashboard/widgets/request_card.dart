@@ -1,5 +1,6 @@
 // lib/features/home/screens/PagesView/provider_dashboard/widgets/request_card.dart
 import 'package:flutter/material.dart';
+import 'package:herafy/core/networks/end_points.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 import 'package:herafy/features/home/models/request_offer_model.dart';
 import 'package:herafy/features/home/screens/PagesView/provider_dashboard/models/request_model.dart';
@@ -12,15 +13,14 @@ class RequestCard extends StatelessWidget {
     required this.onMapPressed,
     this.myOffer,
   });
+
   final RequestOfferModel? myOffer;
-  final ServiceRequestModelProvider request;
+  final ServiceRequestProviderModel request;
   final VoidCallback onOffer;
   final VoidCallback onMapPressed;
 
   String get _timeAgo {
-    final createdAt = DateTime.tryParse(request.createdAt);
-    if (createdAt == null) return "منذ قليل";
-    final diff = DateTime.now().difference(createdAt);
+    final diff = DateTime.now().difference(request.createdAt);
     if (diff.inMinutes < 60) {
       return "منذ ${diff.inMinutes} دقائق";
     } else if (diff.inHours < 24) {
@@ -71,6 +71,8 @@ class RequestCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 12),
+                _buildImagesSection(),
+                const SizedBox(height: 8),
                 _buildCardFooter(),
               ],
             ),
@@ -81,7 +83,10 @@ class RequestCard extends StatelessWidget {
     );
   }
 
+  // ✅ صورة العميل
   Widget _buildClientAvatar() {
+    final avatarUrl = AppEndPoints.getImageUrl(request.clientPictureUrl);
+
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
@@ -93,7 +98,10 @@ class RequestCard extends StatelessWidget {
       child: CircleAvatar(
         radius: 22,
         backgroundColor: Color(AppColors.cardsColor),
-        child: Icon(Icons.person_outline, color: Color(AppColors.primaryColor)),
+        backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+        child: avatarUrl.isEmpty
+            ? Icon(Icons.person_outline, color: Color(AppColors.primaryColor))
+            : null,
       ),
     );
   }
@@ -115,10 +123,6 @@ class RequestCard extends StatelessWidget {
                 maxLines: 1,
               ),
             ),
-            if (request.isUrgent) ...[
-              const SizedBox(width: 4),
-              _buildUrgentBadge(),
-            ],
             const SizedBox(width: 4),
             _buildStatusBadge(),
           ],
@@ -139,6 +143,43 @@ class RequestCard extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+
+  // ✅ صور المشكلة (لو موجودة)
+  Widget _buildImagesSection() {
+    if (request.imageUrls.isEmpty) return const SizedBox.shrink();
+
+    final imageUrls = request.imageUrls.take(3).toList();
+
+    return SizedBox(
+      height: 80,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: imageUrls.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final imageUrl = AppEndPoints.getImageUrl(imageUrls[index]);
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.network(
+              imageUrl,
+              width: 80,
+              height: 80,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.broken_image, color: Colors.grey),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -196,24 +237,6 @@ class RequestCard extends StatelessWidget {
     );
   }
 
-  Widget _buildUrgentBadge() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: const Text(
-        "عاجل",
-        style: TextStyle(
-          color: Colors.red,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
   Widget _buildTimeAgo() {
     return Text(
       _timeAgo,
@@ -226,14 +249,16 @@ class RequestCard extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _buildTag(Icons.category_outlined, "طلب خدمة"),
-        Text(
-          "${request.budget.toStringAsFixed(0)} ج.م",
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF43C59E),
+        // ✅ سعر الطلب (لو موجود)
+        if (request.finalPrice != null)
+          Text(
+            "${request.finalPrice!.toStringAsFixed(0)} ج.م",
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF43C59E),
+            ),
           ),
-        ),
       ],
     );
   }
@@ -263,11 +288,13 @@ class RequestCard extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    // مكتمل أو ملغي
     if (request.requestStatus == 3 || request.requestStatus == 4) {
       return const SizedBox.shrink();
     }
 
-    if (request.requestStatus == 1) {
+    // ✅ لو عندي عرض مرسل → وريني البادج مع الخريطة في صف واحد
+    if (myOffer != null) {
       return Container(
         decoration: BoxDecoration(
           color: Colors.grey[50],
@@ -276,12 +303,15 @@ class RequestCard extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment:
+                MainAxisAlignment.spaceBetween, // ✅ يوزع المسافة بينهم
             children: [
+              // ✅ البادج اللي فيه السعر وحالة الانتظار
               _buildPendingOfferBadge(),
-              const SizedBox(width: 8),
+
+              // ✅ زر الخريطة
               TextButton.icon(
                 onPressed: onMapPressed,
                 icon: Icon(
@@ -303,6 +333,7 @@ class RequestCard extends StatelessWidget {
       );
     }
 
+    // ✅ طلب جديد ومفيش عرض → وريني زرارين (خريطة + تقديم عرض)
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
@@ -343,23 +374,94 @@ class RequestCard extends StatelessWidget {
       ),
     );
   }
+  // Widget _buildActionButtons(BuildContext context) {
+  //   // مكتمل أو ملغي
+  //   if (request.requestStatus == 3 || request.requestStatus == 4) {
+  //     return const SizedBox.shrink();
+  //   }
+
+  //   // تم قبول العرض - في انتظار بدء التنفيذ
+  //   if (request.requestStatus == 1) {
+  //     return Container(
+  //       decoration: BoxDecoration(
+  //         color: Colors.grey[50],
+  //         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+  //       ),
+  //       child: Padding(
+  //         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+  //         child: Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             _buildPendingOfferBadge(),
+  //             TextButton.icon(
+  //               onPressed: onMapPressed,
+  //               icon: Icon(Icons.map_outlined, size: 18, color: Color(AppColors.primaryColor)),
+  //               label: Text(
+  //                 "على الخريطة",
+  //                 style: TextStyle(color: Color(AppColors.primaryColor), fontSize: 12),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     );
+  //   }
+
+  //   // طلب جديد (لم يتم إرسال عرض بعد)
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey[50],
+  //       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         Expanded(
+  //           child: TextButton(
+  //             onPressed: onMapPressed,
+  //             child: Row(
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               children: [
+  //                 Icon(Icons.map_outlined, size: 16, color: Colors.grey[600]),
+  //                 const SizedBox(width: 4),
+  //                 Text("على الخريطة", style: TextStyle(color: Colors.grey[600])),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //         Container(width: 1, height: 20, color: Colors.grey[200]),
+  //         Expanded(
+  //           child: TextButton(
+  //             onPressed: onOffer,
+  //             child: Text(
+  //               "تقديم عرض",
+  //               style: TextStyle(
+  //                 color: Color(AppColors.primaryColor),
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildPendingOfferBadge() {
     if (myOffer == null) {
       return const SizedBox.shrink();
     }
-    // لون ومحتوى بناءً على status العرض
+
     Color color;
     String text;
     IconData icon;
 
-    switch (myOffer?.status) {
-      case 'Accepted':
+    switch (myOffer!.status?.toLowerCase()) {
+      case 'accepted':
         color = Colors.green;
         text = "تم قبول عرضك ✓";
         icon = Icons.check_circle_outline;
         break;
-      case 'Rejected':
+      case 'rejected':
         color = Colors.red;
         text = "تم رفض عرضك";
         icon = Icons.cancel_outlined;
@@ -374,23 +476,22 @@ class RequestCard extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         // سعر العرض
-        if (myOffer != null)
-          Container(
-            margin: const EdgeInsets.only(left: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.teal[50],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              "${myOffer!.price.toStringAsFixed(0)} ج.م",
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.teal,
-                fontWeight: FontWeight.bold,
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.teal[50],
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            "${myOffer!.price.toStringAsFixed(0)} ج.م",
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.teal,
+              fontWeight: FontWeight.bold,
             ),
           ),
+        ),
+        const SizedBox(width: 8), // ✅ مسافة بين السعر والبادج
         // status badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

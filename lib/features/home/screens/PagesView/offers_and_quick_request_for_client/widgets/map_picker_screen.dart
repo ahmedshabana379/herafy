@@ -4,7 +4,9 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class MapPickerScreen extends StatefulWidget {
   const MapPickerScreen({
@@ -30,8 +32,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   bool _isGettingLocation = false;
 
   // ✅ للبحث عن الحرفيين القريبين
-  List<Map<String, dynamic>> _nearbyProviders = [];
-  bool _isLoadingProviders = false;
+  // List<Map<String, dynamic>> _nearbyProviders = []; // DELETED: Removed nearby providers
+  // bool _isLoadingProviders = false; // DELETED: Removed loading providers flag
 
   @override
   void initState() {
@@ -46,83 +48,79 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
   }
 
   // ✅ جلب الحرفيين القريبين بناءً على الحرفة
-  Future<void> _getNearbyProviders() async {
-    setState(() {
-      _isLoadingProviders = true;
-    });
-
-    try {
-      // هنا هتجيب الحرفيين من الـ API
-      // مؤقتاً هنستخدم بيانات وهمية للتجربة
-      final response = await http.get(
-        Uri.parse(
-          'https://your-api.com/api/providers/nearby?lat=${_selectedLocation.latitude}&lng=${_selectedLocation.longitude}&radius=5',
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          _nearbyProviders = List<Map<String, dynamic>>.from(data['data']);
-        });
-      } else {
-        // ✅ بيانات وهمية للتجربة
-        setState(() {
-          _nearbyProviders = [
-            {
-              'id': 1,
-              'name': 'أبو العز سباك',
-              'profession': 'سباك',
-              'rating': 4.8,
-              'distance': 1.2,
-              'imageUrl': null,
-            },
-            {
-              'id': 2,
-              'name': 'محمد كهربائي',
-              'profession': 'كهربائي',
-              'rating': 4.5,
-              'distance': 2.5,
-              'imageUrl': null,
-            },
-            {
-              'id': 3,
-              'name': 'كريم نجار',
-              'profession': 'نجار',
-              'rating': 4.9,
-              'distance': 3.0,
-              'imageUrl': null,
-            },
-          ];
-        });
-      }
-    } catch (e) {
-      print("Error getting nearby providers: $e");
-      // بيانات وهمية للتجربة
-      setState(() {
-        _nearbyProviders = [
-          {
-            'id': 1,
-            'name': 'أبو العز سباك',
-            'profession': 'سباك',
-            'rating': 4.8,
-            'distance': 1.2,
-          },
-          {
-            'id': 2,
-            'name': 'محمد كهربائي',
-            'profession': 'كهربائي',
-            'rating': 4.5,
-            'distance': 2.5,
-          },
-        ];
-      });
-    } finally {
-      setState(() {
-        _isLoadingProviders = false;
-      });
-    }
-  }
+  // Future<void> _getNearbyProviders() async { // DELETED: Entire method removed
+  //   setState(() {
+  //     _isLoadingProviders = true;
+  //   });
+  //
+  //   try {
+  //     final response = await http.get(
+  //       Uri.parse(
+  //         'https://your-api.com/api/providers/nearby?lat=${_selectedLocation.latitude}&lng=${_selectedLocation.longitude}&radius=5',
+  //       ),
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       final data = json.decode(response.body);
+  //       setState(() {
+  //         _nearbyProviders = List<Map<String, dynamic>>.from(data['data']);
+  //       });
+  //     } else {
+  //       setState(() {
+  //         _nearbyProviders = [
+  //           {
+  //             'id': 1,
+  //             'name': 'أبو العز سباك',
+  //             'profession': 'سباك',
+  //             'rating': 4.8,
+  //             'distance': 1.2,
+  //             'imageUrl': null,
+  //           },
+  //           {
+  //             'id': 2,
+  //             'name': 'محمد كهربائي',
+  //             'profession': 'كهربائي',
+  //             'rating': 4.5,
+  //             'distance': 2.5,
+  //             'imageUrl': null,
+  //           },
+  //           {
+  //             'id': 3,
+  //             'name': 'كريم نجار',
+  //             'profession': 'نجار',
+  //             'rating': 4.9,
+  //             'distance': 3.0,
+  //             'imageUrl': null,
+  //           },
+  //         ];
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print("Error getting nearby providers: $e");
+  //     setState(() {
+  //       _nearbyProviders = [
+  //         {
+  //           'id': 1,
+  //           'name': 'أبو العز سباك',
+  //           'profession': 'سباك',
+  //           'rating': 4.8,
+  //           'distance': 1.2,
+  //         },
+  //         {
+  //           'id': 2,
+  //           'name': 'محمد كهربائي',
+  //           'profession': 'كهربائي',
+  //           'rating': 4.5,
+  //           'distance': 2.5,
+  //         },
+  //       ];
+  //     });
+  //   } finally {
+  //     setState(() {
+  //       _isLoadingProviders = false;
+  //     });
+  //   }
+  // }
 
   Future<void> _getCurrentLocation() async {
     setState(() {
@@ -133,12 +131,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       final hasPermission = await PermissionHandler().getPermissionLocation();
       if (!hasPermission) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("يرجى تفعيل صلاحية الموقع أولاً"),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          SnackBarHelper.showWarningSnackBar(context, "يرجى تفعيل صلاحية الموقع أولاً");
         }
         setState(() {
           _isGettingLocation = false;
@@ -150,12 +143,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("يرجى تشغيل خدمة تحديد الموقع"),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          SnackBarHelper.showWarningSnackBar(context, "يرجى تشغيل خدمة تحديد الموقع");
           await Geolocator.openLocationSettings();
         }
         setState(() {
@@ -186,30 +174,16 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         _mapController.move(_selectedLocation, 16);
         await _getAddressFromLatLng();
 
-        await _getNearbyProviders();
+        // await _getNearbyProviders(); // DELETED: Removed call to get nearby providers
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("تم تحديد موقعك الحالي"),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
-            ),
-          );
+          SnackBarHelper.showSuccessSnackBar(context, "تم تحديد موقعك الحالي");
         }
       }
     } catch (e) {
       print("Timeout getting location: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "تعذر تحديد الموقع، يرجى التأكد من تشغيل GPS والمحاولة مرة أخرى",
-            ),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
-          ),
-        );
+        SnackBarHelper.showWarningSnackBar(context, "تعذر تحديد الموقع، يرجى التأكد من تشغيل GPS والمحاولة مرة أخرى");
       }
     } finally {
       if (mounted) {
@@ -329,91 +303,89 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 ],
               ),
 
-              // ✅ ماركرات الحرفيين القريبين
-              if (_nearbyProviders.isNotEmpty)
-                MarkerLayer(
-                  markers: _nearbyProviders.map((provider) {
-                    // ملاحظة: هنا المفروض تجيب الإحداثيات الحقيقية لكل حرفي
-                    // مؤقتاً هنستخدم إحداثيات وهمية قريبة
-                    return Marker(
-                      point: LatLng(
-                        _selectedLocation.latitude +
-                            (provider['distance']! / 111) * 0.01,
-                        _selectedLocation.longitude +
-                            (provider['distance']! / 85) * 0.01,
-                      ),
-                      width: 60,
-                      height: 70,
-                      child: GestureDetector(
-                        onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(provider['name']),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("المهنة: ${provider['profession']}"),
-                                  const SizedBox(height: 8),
-                                  Text("التقييم: ${provider['rating']} ⭐"),
-                                  const SizedBox(height: 8),
-                                  Text("المسافة: ${provider['distance']} كم"),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text("إغلاق"),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                        child: Column(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.person,
-                                    color: Colors.blue,
-                                    size: 14,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    provider['name'],
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.location_on,
-                              color: Colors.blue,
-                              size: 24,
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+              // ✅ DELETED: Removed nearby providers markers layer section
+              // if (_nearbyProviders.isNotEmpty)
+              //   MarkerLayer(
+              //     markers: _nearbyProviders.map((provider) {
+              //       return Marker(
+              //         point: LatLng(
+              //           _selectedLocation.latitude +
+              //               (provider['distance']! / 111) * 0.01,
+              //           _selectedLocation.longitude +
+              //               (provider['distance']! / 85) * 0.01,
+              //         ),
+              //         width: 60,
+              //         height: 70,
+              //         child: GestureDetector(
+              //           onTap: () {
+              //             showDialog(
+              //               context: context,
+              //               builder: (context) => AlertDialog(
+              //                 title: Text(provider['name']),
+              //                 content: Column(
+              //                   mainAxisSize: MainAxisSize.min,
+              //                   crossAxisAlignment: CrossAxisAlignment.start,
+              //                   children: [
+              //                     Text("المهنة: ${provider['profession']}"),
+              //                     const SizedBox(height: 8),
+              //                     Text("التقييم: ${provider['rating']} ⭐"),
+              //                     const SizedBox(height: 8),
+              //                     Text("المسافة: ${provider['distance']} كم"),
+              //                   ],
+              //                 ),
+              //                 actions: [
+              //                   TextButton(
+              //                     onPressed: () => Navigator.pop(context),
+              //                     child: const Text("إغلاق"),
+              //                   ),
+              //                 ],
+              //               ),
+              //             );
+              //           },
+              //           child: Column(
+              //             children: [
+              //               Container(
+              //                 padding: const EdgeInsets.all(4),
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.white,
+              //                   borderRadius: BorderRadius.circular(20),
+              //                   boxShadow: [
+              //                     BoxShadow(
+              //                       color: Colors.black.withOpacity(0.2),
+              //                       blurRadius: 4,
+              //                     ),
+              //                   ],
+              //                 ),
+              //                 child: Row(
+              //                   mainAxisSize: MainAxisSize.min,
+              //                   children: [
+              //                     const Icon(
+              //                       Icons.person,
+              //                       color: Colors.blue,
+              //                       size: 14,
+              //                     ),
+              //                     const SizedBox(width: 4),
+              //                     Text(
+              //                       provider['name'],
+              //                       style: const TextStyle(
+              //                         fontSize: 10,
+              //                         fontWeight: FontWeight.bold,
+              //                       ),
+              //                     ),
+              //                   ],
+              //                 ),
+              //               ),
+              //               const Icon(
+              //                 Icons.location_on,
+              //                 color: Colors.blue,
+              //                 size: 24,
+              //               ),
+              //             ],
+              //           ),
+              //         ),
+              //       );
+              //     }).toList(),
+              //   ),
             ],
           ),
 
@@ -450,24 +422,24 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             ),
           ),
 
-          // ✅ زر البحث عن حرفيين قريبين
-          Positioned(
-            bottom: 160,
-            left: 16,
-            child: FloatingActionButton(
-              heroTag: null,
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _isLoadingProviders ? null : _getNearbyProviders,
-              child: _isLoadingProviders
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.search, color: Color(0xFF6C63FF)),
-            ),
-          ),
+          // ✅ DELETED: Removed search button for nearby providers
+          // Positioned(
+          //   bottom: 160,
+          //   left: 16,
+          //   child: FloatingActionButton(
+          //     heroTag: null,
+          //     mini: true,
+          //     backgroundColor: Colors.white,
+          //     onPressed: _isLoadingProviders ? null : _getNearbyProviders,
+          //     child: _isLoadingProviders
+          //         ? const SizedBox(
+          //             width: 20,
+          //             height: 20,
+          //             child: CircularProgressIndicator(strokeWidth: 2),
+          //           )
+          //         : const Icon(Icons.search, color: Color(0xFF6C63FF)),
+          //   ),
+          // ),
 
           // ✅ الـ Bottom Sheet مع العنوان
           Positioned(
@@ -523,30 +495,30 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ✅ عرض عدد الحرفيين القريبين
-                  if (_nearbyProviders.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.people, size: 16, color: Colors.blue[700]),
-                          const SizedBox(width: 8),
-                          Text(
-                            "يوجد ${_nearbyProviders.length} حرفي بالقرب منك",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue[700],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  // ✅ DELETED: Removed nearby providers count display
+                  // if (_nearbyProviders.isNotEmpty)
+                  //   Container(
+                  //     padding: const EdgeInsets.all(8),
+                  //     decoration: BoxDecoration(
+                  //       color: Colors.blue[50],
+                  //       borderRadius: BorderRadius.circular(8),
+                  //     ),
+                  //     child: Row(
+                  //       children: [
+                  //         Icon(Icons.people, size: 16, color: Colors.blue[700]),
+                  //         const SizedBox(width: 8),
+                  //         Text(
+                  //           "يوجد ${_nearbyProviders.length} حرفي بالقرب منك",
+                  //           style: TextStyle(
+                  //             fontSize: 12,
+                  //             color: Colors.blue[700],
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
 
-                  const SizedBox(height: 16),
+                  // const SizedBox(height: 16), // DELETED: Removed extra spacing
 
                   // ✅ عرض الإحداثيات
                   Container(
@@ -601,12 +573,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                             'address': _selectedAddress,
                           });
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text("يرجى اختيار موقع أولاً"),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
+                          SnackBarHelper.showErrorSnackBar(context, "يرجى اختيار موقع أولاً");
                         }
                       },
                       style: ElevatedButton.styleFrom(

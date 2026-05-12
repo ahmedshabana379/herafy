@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:dio/dio.dart';
 import 'package:herafy/core/networks/cache_helper.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
@@ -74,6 +72,94 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   // login logic
+  // Future<void> login({required String email, required String password}) async {
+  //   emit(LoginLoading());
+  //   try {
+  //     final response = await DioHelper.postRequest(
+  //       endPoint: AppEndPoints.login,
+  //       data: {"email": email, "password": password},
+  //     );
+  //     if (response.statusCode == 200) {
+  //       UserModel user = UserModel.fromJson(response.data);
+
+  //       _currentUser = user;
+
+  //       if (user.firstName == null && user.fullName.isNotEmpty) {
+  //         final parts = user.fullName.trim().split(' ');
+  //         _currentUser = user.copyWith(
+  //           firstName: parts.first,
+  //           lastName: parts.length > 1 ? parts.sublist(1).join(' ') : '',
+  //         );
+  //       }
+
+  //       if (user.accessToken != null) {
+  //         await CacheHelper.saveToken(user.accessToken!);
+  //         await CacheHelper.saveUserData(user);
+  //         emit(UserDataUpdated());
+  //       }
+
+  //       // ✅ التحقق: لو المستخدم فني، اجيب بياناته الكاملة (بما فيها الكريديت)
+  //       if (_currentUser!.isProvider) {
+  //         await getProviderProfile(); // <--- دي اللي تجيب الكريديت
+  //       } else {
+  //         await getUserProfile(); // للعميل العادي
+  //       }
+
+  //       emit(LoginSuccess());
+  //     }
+  //   } on DioException catch (e) {
+  //     emit(LoginError(e.response?.data['message'] ?? "خطأ في تسجيل الدخول"));
+  //   }
+  // }
+
+  // في AuthCubit.dart
+
+  // أضف هذه الدالة
+  Future<void> getProviderCredits() async {
+    try {
+      final response = await DioHelper.getRequest(
+        endPoint: AppEndPoints.providerGetsHisProfile,
+      );
+
+      if (response.statusCode == 200 && _currentUser != null) {
+        final data = response.data;
+        final creditsValue = data['credits']?.toInt() ?? 0;
+        final fullName = data['name'] ?? ""; // "فني احمد"
+
+        print("📛 Full name from API: $fullName");
+
+        // ✅ قسم الاسم إلى firstName و lastName
+        String firstName = fullName;
+        String lastName = "";
+
+        if (fullName.contains(' ')) {
+          final parts = fullName.split(' ');
+          firstName = parts.first;
+          lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+        }
+
+        _currentUser = _currentUser!.copyWith(
+          credits: creditsValue,
+          firstName: firstName,
+          lastName: lastName,
+          pictureUrl: data['pictureUrl'],
+        );
+
+        print("👤 FirstName: $firstName, LastName: $lastName");
+        print("💰 Credits: $creditsValue");
+
+        await CacheHelper.saveUserData(_currentUser!);
+        emit(UserDataUpdated());
+      }
+    } catch (e) {
+      print("❌ Error: $e");
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // ثم عدل دالة login - أضف استدعاء getProviderCredits
+  // -------------------------------------------------------------------
+
   Future<void> login({required String email, required String password}) async {
     emit(LoginLoading());
     try {
@@ -81,13 +167,12 @@ class AuthCubit extends Cubit<AuthState> {
         endPoint: AppEndPoints.login,
         data: {"email": email, "password": password},
       );
+
       if (response.statusCode == 200) {
         UserModel user = UserModel.fromJson(response.data);
-        print(
-          "=========================: ${user.status}============================",
-        );
 
         _currentUser = user;
+
         if (user.firstName == null && user.fullName.isNotEmpty) {
           final parts = user.fullName.trim().split(' ');
           _currentUser = user.copyWith(
@@ -95,12 +180,21 @@ class AuthCubit extends Cubit<AuthState> {
             lastName: parts.length > 1 ? parts.sublist(1).join(' ') : '',
           );
         }
+
         if (user.accessToken != null) {
           await CacheHelper.saveToken(user.accessToken!);
-          // حفظ بيانات المستخدم كاملة
           await CacheHelper.saveUserData(user);
-          emit(UserDataUpdated());
         }
+
+        // ✅ جلب البيانات كاملة قبل ما تبعث LoginSuccess
+        if (_currentUser!.isProvider) {
+          await getProviderCredits(); // دي هتحدث الصورة والاسم والكريديت
+          await getProviderProfile(); // دي هتحدث باقي البيانات
+        } else {
+          await getUserProfile();
+        }
+
+        // ✅ بعد ما كل البيانات تجابت, ابعث نجاح
         emit(LoginSuccess());
       }
     } on DioException catch (e) {
@@ -143,7 +237,7 @@ class AuthCubit extends Cubit<AuthState> {
           email: email,
           isProviderFromServer: isProvider,
           roles: isProvider ? ["Provider"] : ["Client"],
-          status: 0, // NotCompleted
+          status: 0,
         );
         await CacheHelper.saveUserData(_currentUser!);
         emit(RegisterSuccess(isProvider));
@@ -208,8 +302,8 @@ class AuthCubit extends Cubit<AuthState> {
     required File idCardImage,
     required File profileImage,
     required File criminalRecordImage,
-    required double latitude,  
-  required double longitude,
+    required double latitude,
+    required double longitude,
   }) async {
     emit(ProviderRegisterLoading());
     try {
@@ -310,7 +404,7 @@ class AuthCubit extends Cubit<AuthState> {
         "Gender": gender,
         "PhoneNumbers": [phoneNumber], // ✅ array
         if (birthDate != null)
-          "DateOfBirth":
+          "dateOfBirth":
               "${birthDate.year}-${birthDate.month}-${birthDate.day}",
         if (profileImage != null)
           "Picture": await MultipartFile.fromFile(
@@ -340,6 +434,7 @@ class AuthCubit extends Cubit<AuthState> {
           gender: gender,
           governorateId: governorateId,
           regionId: regionId,
+
           isProfileComplete: true,
           pictureUrl: newPictureUrl,
           status: _currentUser!.status == 0 ? 5 : _currentUser!.status,
@@ -423,4 +518,77 @@ class AuthCubit extends Cubit<AuthState> {
       }
     }
   }
+
+  Future<void> getUserProfile() async {
+    try {
+      // استخدم الـ EndPoint المناسبة (Client أو Provider)
+      final endPoint = AppEndPoints.getUserData;
+
+      final response = await DioHelper.getRequest(endPoint: endPoint);
+
+      if (response.statusCode == 200) {
+        final profileData = response.data;
+
+        _currentUser = _currentUser?.copyWith(
+          firstName: profileData['firstName'],
+          lastName: profileData['lastName'],
+          gender: profileData['gender'],
+          pictureUrl: profileData['pictureUrl'],
+          governorateId: profileData['governorateId'],
+          regionId: profileData['regionId'],
+          phoneNumber: (profileData['phoneNumbers'] as List).isNotEmpty
+              ? profileData['phoneNumbers'][0]
+              : null,
+        );
+
+        // حفظ النسخة الكاملة في الكاش
+        await CacheHelper.saveUserData(_currentUser!);
+        emit(UserDataUpdated()); // عشان الـ Drawer يحس بالتغيير
+      }
+    } catch (e) {
+      print("Error fetching profile: $e");
+    }
+  }
+
+  // --- ميثود جلب بروفايل الفني وتحديث الكريديت ---
+  Future<void> getProviderProfile() async {
+    try {
+      final response = await DioHelper.getRequest(
+        endPoint: AppEndPoints.providerGetsHisProfile,
+      );
+
+      if (response.statusCode == 200 && _currentUser != null) {
+        final profileData = response.data;
+
+        _currentUser = _currentUser!.copyWith(
+          firstName: profileData['firstName'] ?? _currentUser!.firstName,
+          lastName: profileData['lastName'] ?? _currentUser!.lastName,
+          pictureUrl: profileData['pictureUrl'] ?? _currentUser!.pictureUrl,
+          phoneNumber: profileData['phoneNumber'] ?? _currentUser!.phoneNumber,
+          governorateId: profileData['governorateId'],
+          regionId: profileData['regionId'],
+          status: profileData['status'] ?? _currentUser!.status,
+        );
+
+        await CacheHelper.saveUserData(_currentUser!);
+
+        // ✅ برضه إرسال حدث للتحديث
+        emit(UserDataUpdated());
+      }
+    } catch (e) {
+      print("Error fetching provider profile: $e");
+    }
+  }
+
+  // Future<void> appStarted() async {
+  //   await loadUserData();
+  //   if (_currentUser != null) {
+  //     // ✅ نفس المنطق هنا برضه
+  //     if (_currentUser!.isProvider) {
+  //       await getProviderProfile();
+  //     } else {
+  //       await getUserProfile();
+  //     }
+  //   }
+  // }
 }

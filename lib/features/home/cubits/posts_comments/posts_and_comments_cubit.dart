@@ -6,13 +6,14 @@ import 'package:herafy/core/networks/dio_helpers.dart';
 import 'package:herafy/core/networks/end_points.dart';
 import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_state.dart';
 import 'package:herafy/features/home/models/comment_model.dart';
-import 'package:herafy/features/home/models/post_models.dart'; // تأكد من المسار
+import 'package:herafy/features/home/models/post_models.dart';
+import 'package:herafy/features/home/models/post_reaction_model.dart'; // تأكد من المسار
 
 class SocialCubit extends Cubit<SocialState> {
   SocialCubit() : super(SocialInitial());
 
   static SocialCubit get(context) => BlocProvider.of(context);
-
+  List<PostReactionModel> postReactions = [];
   List<PostModel> posts = [];
   List<CommentModel> comments = [];
   int _currentPage = 1;
@@ -33,25 +34,17 @@ class SocialCubit extends Cubit<SocialState> {
       );
 
       final dynamic payload = response.data;
-      List rawList = [];
-      int totalCount = 0;
-
-      if (payload is Map<String, dynamic>) {
-        rawList = payload['data'] ?? [];
-        totalCount = payload['count'] ?? 0;
-      }
+      List rawList = payload['data'] ?? [];
+      int totalCount = payload['count'] ?? 0;
 
       final newPosts = rawList.map((e) => PostModel.fromJson(e)).toList();
 
-      if (isRefresh) {
-        posts = newPosts;
-      } else {
-        posts = newPosts;
-      }
-
+      posts = isRefresh ? newPosts : [...posts, ...newPosts];
       _hasMore = posts.length < totalCount;
 
       emit(GetPostsSuccess());
+      
+      // شيلنا من هنا getPostReactions لأن الداتا بقت جوه الموديل خلاص
     } catch (error) {
       emit(GetPostsError(error.toString()));
     }
@@ -175,6 +168,7 @@ class SocialCubit extends Cubit<SocialState> {
         return CommentModel.fromJson(e);
       }).toList();
       emit(GetCommentsSuccess());
+      final reactions = await getCommentReactions(comments.last.id);
     } catch (error) {
       emit(GetCommentsError(error.toString()));
     }
@@ -231,14 +225,15 @@ class SocialCubit extends Cubit<SocialState> {
   }
 
   // React على بوست
-  void reactToPost({required int postId, required int reactionType}) async {
+  Future<void> reactToPost({
+    required int postId,
+    required int reactionType,
+  }) async {
     emit(ReactToPostLoading());
     try {
       await DioHelper.putRequest(
         endPoint: "${AppEndPoints.reactToPost}$postId",
-        queryParameters: {
-          "reaction": reactionType,
-        }, 
+        data: {'reactionType': reactionType},
       );
       emit(ReactToPostSuccess());
       getPosts(isRefresh: true);
@@ -254,7 +249,7 @@ class SocialCubit extends Cubit<SocialState> {
     }
   }
 
-  void reactToComment({
+  Future<void> reactToComment({
     required int commentId,
     required int reactionType,
   }) async {
@@ -262,9 +257,7 @@ class SocialCubit extends Cubit<SocialState> {
     try {
       await DioHelper.putRequest(
         endPoint: "${AppEndPoints.reactToComment}$commentId",
-        queryParameters: {
-          "reaction": reactionType,
-        }, // ← reaction مش ReactionType
+        data: {'reactionType': reactionType}, // ← reaction مش ReactionType
       );
       emit(ReactToCommentSuccess());
     } on DioException catch (error) {
@@ -279,19 +272,49 @@ class SocialCubit extends Cubit<SocialState> {
     }
   }
 
+  // جلب رياكتس البوست
   Future<Map<int, int>> getPostReactions(int postId) async {
     try {
       final response = await DioHelper.getRequest(
-        endPoint: "${AppEndPoints.getPostReactions}$postId",
+        endPoint: "PostReaction/post-reactions/$postId",
       );
-      final data = response.data;
-      if (data is Map) {
-        return data.map(
-          (k, v) => MapEntry(int.tryParse(k.toString()) ?? 0, v as int),
-        );
+
+      final List data = response.data;
+      final Map<int, int> reactions = {};
+
+      for (var item in data) {
+        final reactionType = item['reactionType'] as int;
+        if (reactionType > 0) {
+          reactions[reactionType] = (reactions[reactionType] ?? 0) + 1;
+        }
       }
+
+      print("Reactions for post $postId: $reactions"); // للتأكد
+      return reactions;
+    } catch (e) {
+      print("Error getting reactions: $e");
       return {};
-    } catch (_) {
+    }
+  }
+
+  // جلب رياكتس الكومنت
+  Future<Map<int, int>> getCommentReactions(int commentId) async {
+    try {
+      final response = await DioHelper.getRequest(
+        endPoint: "${AppEndPoints.getCommentReactions}$commentId",
+      );
+
+      final List data = response.data;
+      final Map<int, int> reactions = {};
+
+      for (var item in data) {
+        final type = item['reactionType'] as int;
+        if (type > 0) {
+          reactions[type] = (reactions[type] ?? 0) + 1;
+        }
+      }
+      return reactions;
+    } catch (e) {
       return {};
     }
   }

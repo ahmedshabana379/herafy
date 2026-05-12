@@ -1,16 +1,12 @@
 // lib/features/home/screens/PagesView/provider_dashboard/widgets/offer_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:herafy/core/components/snack_bar_helper.dart';
 import 'package:herafy/core/resourses/app_colors.dart';
 
 class OfferDialog extends StatefulWidget {
-  const OfferDialog({
-    super.key,
-    required this.requestBudget,
-    required this.serviceName,
-  });
+  const OfferDialog({super.key, required this.serviceName});
 
-  final double requestBudget;
   final String serviceName;
 
   @override
@@ -25,7 +21,6 @@ class _OfferDialogState extends State<OfferDialog> {
   void initState() {
     super.initState();
     // تعبئة السعر تلقائياً بميزانية الطلب
-    _priceController.text = widget.requestBudget.toStringAsFixed(0);
   }
 
   @override
@@ -79,10 +74,7 @@ class _OfferDialogState extends State<OfferDialog> {
                       ),
                       Text(
                         "خدمة ${widget.serviceName}",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -166,20 +158,18 @@ class _OfferDialogState extends State<OfferDialog> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
+                    // في زر "إرسال العرض"
                     onPressed: () {
                       final price = double.tryParse(_priceController.text);
                       if (price == null || price <= 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("من فضلك أدخل سعر صحيح")),
-                        );
+                        SnackBarHelper.showWarningSnackBar(context, "من فضلك أدخل سعر صحيح");
                         return;
                       }
                       if (_messageController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("من فضلك اكتب رسالة لعرضك")),
-                        );
+                        SnackBarHelper.showWarningSnackBar(context, "من فضلك اكتب رسالة لعرضك");
                         return;
                       }
+                      // ✅ أضف هذا السطر
                       Navigator.pop(context, {
                         'price': price,
                         'message': _messageController.text.trim(),

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:herafy/core/networks/dio_helpers.dart';
 import 'package:herafy/core/resourses/app_theme.dart';
+import 'package:herafy/core/services/notification_service.dart';
 import 'package:herafy/features/auth/cubits/auth_cubit.dart';
 import 'package:herafy/features/auth/screens/customer/customer_register_page.dart';
 import 'package:herafy/features/auth/screens/login.dart';
 import 'package:herafy/features/auth/screens/role_selection.dart';
 import 'package:herafy/features/auth/screens/services_provider/provider_register_page.dart';
 import 'package:herafy/features/auth/screens/waiting_approve_page.dart';
+import 'package:herafy/features/home/cubits/cubit/notifications_cubit_cubit.dart';
 import 'package:herafy/features/home/cubits/posts_comments/posts_and_comments_cubit.dart';
 import 'package:herafy/features/home/cubits/services_requests/cubit/service_request_cubit.dart';
 import 'package:herafy/features/home/screens/PagesView/offers_and_quick_request_for_client/screens/offers_page.dart';
@@ -17,10 +19,13 @@ import 'package:herafy/features/screens/complete_data.dart';
 import 'package:herafy/features/screens/create_post_screen.dart';
 import 'package:herafy/features/screens/edit_account_page.dart';
 import 'package:herafy/features/home/screens/home_main.dart';
+import 'package:herafy/features/splash/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+   await NotificationService.init();
   DioHelper.initDio();
+  
   runApp(const HerafyApp());
 }
 
@@ -93,6 +98,8 @@ class _HerafyAppState extends State<HerafyApp> {
         BlocProvider<AuthCubit>.value(value: _authCubit),
         BlocProvider<SocialCubit>(create: (_) => SocialCubit()),
         BlocProvider<ServiceRequestCubit>(create: (_) => ServiceRequestCubit()),
+        BlocProvider<NotificationCubit>(create: (_) => NotificationCubit()),
+        
       ],
       child: MaterialApp(
         routes: {
@@ -111,6 +118,7 @@ class _HerafyAppState extends State<HerafyApp> {
               const ProviderDashboardPage(),
           QuickRequestPage.routeName: (context) => const QuickRequestPage(),
           OffersPage.routeName: (context) => const OffersPage(),
+          // SplashScreen.routeName: (context) => const SplashScreen(),
         },
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,

@@ -104,25 +104,29 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
         ),
         body: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
-  if (state is UpdateProfileSuccess) {
-    SnackBarHelper.showSuccessSnackBar(context, "تم حفظ البيانات بنجاح");
+            if (state is UpdateProfileSuccess) {
+              SnackBarHelper.showSuccessSnackBar(
+                context,
+                "تم حفظ البيانات بنجاح",
+              );
 
-    final user = context.read<AuthCubit>().currentUser;
+              final user = context.read<AuthCubit>().currentUser;
 
-   if (user?.isProvider == true) {
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => const ProviderRegisterPage(startFromSecondStep: true),
-    ),
-  );
-} else {
-  Navigator.pushReplacementNamed(context, HomePage.routeName);
-}
-  } else if (state is UpdateProfileError) {
-    SnackBarHelper.showErrorSnackBar(context, state.message);
-  }
-},
+              if (user?.isProvider == true) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const ProviderRegisterPage(startFromSecondStep: true),
+                  ),
+                );
+              } else {
+                Navigator.pushReplacementNamed(context, HomePage.routeName);
+              }
+            } else if (state is UpdateProfileError) {
+              SnackBarHelper.showErrorSnackBar(context, state.message);
+            }
+          },
           builder: (context, state) {
             var cubit = context.read<AuthCubit>();
 
@@ -165,9 +169,9 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                     // صف المحافظة والمدينة بالداتا الحقيقية
                     Row(
                       children: [
-                        Expanded(child: _buildRealGovDropdown(cubit)),
-                        const SizedBox(width: 15),
                         Expanded(child: _buildRealRegionDropdown(cubit)),
+                        const SizedBox(width: 15),
+                        Expanded(child: _buildRealGovDropdown(cubit)),
                       ],
                     ),
 
@@ -176,39 +180,30 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
                     const SizedBox(height: 40),
 
                     // الـ AppButton بتاعك باللوجيك المطلوب
-                    AppButton(
-                      text: "إرسال البيانات",
-                      buttonText: "جاري إرسال البيانات...",
-                      isLoading: state is UpdateProfileLoading,
-                      isButtonEnabled: true,
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          cubit.updateUserProfile(
-                            firstName: _firstNameController.text.trim(),
-                            lastName: _lastNameController.text.trim(),
-                            phoneNumber: _phoneController.text.trim(),
-                            gender: _selectedGender == "ذكر" ? 0 : 1,
-                            governorateId: selectedGovernorate?.id ?? 0,
-                            regionId: selectedRegion?.id ?? 0,
-                            profileImage: _profileImage,
-                          );
-                        }
-                      },
+                    Center(
+                      child: AppButton(
+                        text: "إرسال البيانات",
+                        buttonText: "جاري إرسال البيانات...",
+                        isLoading: state is UpdateProfileLoading,
+                        isButtonEnabled: true,
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            cubit.updateUserProfile(
+                              firstName: _firstNameController.text.trim(),
+                              lastName: _lastNameController.text.trim(),
+                              phoneNumber: _phoneController.text.trim(),
+                              gender: _selectedGender == "ذكر" ? 0 : 1,
+                              governorateId: selectedGovernorate?.id ?? 0,
+                              regionId: selectedRegion?.id ?? 0,
+                              profileImage: _profileImage,
+                              birthDate: _selectedDate,
+                            );
+                          }
+                        },
+                      ),
                     ),
 
                     const SizedBox(height: 15),
-                    Center(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          "إلغاء التعديلات",
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -374,17 +369,17 @@ class _CompleteDataScreenState extends State<CompleteDataScreen> {
       children: [
         Expanded(
           child: _CustomTextFormField(
-            controller: _firstNameController,
-            label: "الاسم الأول",
-            hint: "أدخل اسمك الأول",
+            controller: _lastNameController,
+            label: "اسم العائلة",
+            hint: "أدخل اسم العائلة",
           ),
         ),
         const SizedBox(width: 15),
         Expanded(
           child: _CustomTextFormField(
-            controller: _lastNameController,
-            label: "اسم العائلة",
-            hint: "أدخل اسم العائلة",
+            controller: _firstNameController,
+            label: "الاسم الأول",
+            hint: "أدخل اسمك الأول",
           ),
         ),
       ],

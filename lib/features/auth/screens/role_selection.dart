@@ -27,7 +27,7 @@ class RoleSelectionPage extends StatelessWidget {
             Icon(Icons.handyman_rounded, color: Color(0xFF2b2854)),
             const SizedBox(width: 8),
             const Text(
-              "حرفي",
+              " حِرَفِيّ",
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.bold,

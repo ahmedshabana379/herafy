@@ -53,7 +53,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
             Icon(Icons.handyman_rounded, color: Color(0xFF2b2854)),
             const SizedBox(width: 8),
             const Text(
-              "إنضم إلي حرفي",
+              "إنضم إلي  حِرَفِيّ",
               style: TextStyle(
                 fontSize: 25,
                 fontWeight: FontWeight.bold,
@@ -117,7 +117,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                               CustomTextField(
                                 keyboardType: TextInputType.text,
                                 isPassword: false,
-                                hintText: "مثلاً: محمد",
+                                hintText: "إسم العائلة",
                                 icon: Icons.person_outline,
                                 controller: _firstNameController,
                                 validator: (value) =>
@@ -135,7 +135,7 @@ class _CustomerRegisterPageState extends State<CustomerRegisterPage> {
                               CustomTextField(
                                 keyboardType: TextInputType.text,
                                 isPassword: false,
-                                hintText: "مثلاً: أحمد",
+                                hintText: "إسمك",
                                 icon: Icons.people_outline,
                                 controller: _lastNameController,
                                 validator: (value) =>

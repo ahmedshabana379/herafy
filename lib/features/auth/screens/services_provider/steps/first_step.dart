@@ -85,7 +85,7 @@ class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
                       CustomTextField(
                         keyboardType: TextInputType.text,
                         isPassword: false,
-                        hintText: "مثلاً: محمد",
+                        hintText: "إسم العائلة",
                         icon: Icons.person_outline,
                         controller: widget._firstNameController,
                         validator: (value) => value!.isEmpty ? 'مطلوب' : null,
@@ -102,7 +102,7 @@ class _FirstRegisterationStepState extends State<FirstRegisterationStep> {
                       CustomTextField(
                         keyboardType: TextInputType.text,
                         isPassword: false,
-                        hintText: "مثلاً: أحمد",
+                        hintText: "إسمك",
                         icon: Icons.people_outline,
                         controller: widget._lastNameController,
                         validator: (value) => value!.isEmpty ? 'مطلوب' : null,
